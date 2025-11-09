@@ -23,7 +23,7 @@ The companion app enables remote control and displays real-time temperature tren
 - Implement the slider and buttons for precise temperature control, including feedback (3 hours).
 
 ### User Story #2
-*As as user, I want to see temperature changes over time so I can verify cooling performance.*
+*As a user, I want to see temperature changes over time so I can verify cooling performance.*
 
 #### Dev Tasks:
 - Create and design the temperature trend screen (3 hours).
@@ -43,7 +43,7 @@ The companion app enables remote control and displays real-time temperature tren
 - Test the communication by sending simple temperature change commands (5 hours).
 
 ### User Story #4
-*As as user, I want to see temperature changes over time so I can verify cooling performance.* 
+*As a user, I want to see temperature changes over time so I can verify cooling performance.* 
 
 #### Dev Tasks:
 - Use a GET to periodically acquire the temperature of the unit and store it (6 hours).
