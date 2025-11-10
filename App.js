@@ -23,8 +23,6 @@ import { colours } from "./app/constants/colours";
 const Tab = createBottomTabNavigator();
 const ICON_SIZE = 30;
 
-// todo: fonts, background colour, and typography (slider and buttons in dt2)
-
 export default function App() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
