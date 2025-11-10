@@ -1,11 +1,17 @@
 export const colours = {
   // Base backgrounds
-  backgroundPrimary: "#E9F2F9", 
+  backgroundPrimary: "#E9F2F9",
   backgroundSecondary: "#D7E4EC",
 
   // Accent (temperature control highlight)
   accentCool: "#56CCF2",
   accentWarm: "#FF9F43",
+
+  // navigation bar
+  tabBarActiveTintColor: "#007AFF",
+  tabBarInactiveTintColor: "#8CA3B0",
+  tabBarActiveBackgroundColor: "#E9F2F9",
+  tabBarInactiveBackgroundColor: "transparent",
 
   // Buttons
   buttonPrimary: "#007AFF",

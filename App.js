@@ -18,6 +18,7 @@ import ControlScreen from "./app/screens/ControlScreen";
 import TrendsScreen from "./app/screens/TrendsScreen";
 
 import icons from "./app/constants/icons";
+import { colours } from "./app/constants/colours";
 
 const Tab = createBottomTabNavigator();
 const ICON_SIZE = 30;
@@ -47,10 +48,10 @@ export default function App() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: "#1e1e1e",
-          tabBarInactiveTintColor: "#6e6e6e",
-          tabBarActiveBackgroundColor: "#f8f9fb",
-          tabBarInactiveBackgroundColor: "transparent",
+          tabBarActiveTintColor: colours.tabBarActiveTintColor,
+          tabBarInactiveTintColor: colours.tabBarInactiveTintColor,
+          tabBarActiveBackgroundColor: colours.tabBarActiveBackgroundColor,
+          tabBarInactiveBackgroundColor: colours.tabBarInactiveBackgroundColor,
           tabBarItemStyle: {
             flex: 1,
             borderRadius: 12,
@@ -59,7 +60,7 @@ export default function App() {
             marginTop: 6,
           },
           tabBarStyle: {
-            backgroundColor: "#e8ebf0",
+            backgroundColor: colours.backgroundSecondary,
             height: RFPercentage(10),
             borderTopWidth: 0,
           },
