@@ -2,14 +2,24 @@ import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React from "react";
 
+import { typography } from "../constants/typography";
+
 const ControlScreen = () => {
   return (
-    <SafeAreaView>
-      <Text>ControlScreen</Text>
+    <SafeAreaView style={styles.container}>
+      <Text style={[styles.header, typography.boldBody]}>Temperature Control</Text>
     </SafeAreaView>
   );
 };
 
 export default ControlScreen;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    marginVertical: 12,
+    marginHorizontal: "5%",
+  },
+});
