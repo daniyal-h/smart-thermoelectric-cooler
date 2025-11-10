@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 
+import SliderControl from "../components/SliderControl";
+
 const { width, height } = Dimensions.get("window");
 
 const ControlScreen = () => {
@@ -19,7 +21,9 @@ const ControlScreen = () => {
         </Text>
       </View>
 
-      <View style={styles.slider}></View>
+      <View style={styles.slider}>
+        <SliderControl contentStyle={typography.smallDisplay} />
+      </View>
     </SafeAreaView>
   );
 };
@@ -39,10 +43,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   slider: {
-    backgroundColor: colours.backgroundSecondary,
+    //backgroundColor: colours.backgroundSecondary,
     width: "100%",
     height: "45%",
     borderRadius: 16,
     marginBottom: height * 0.15,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
