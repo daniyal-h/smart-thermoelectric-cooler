@@ -7,7 +7,9 @@ import { typography } from "../constants/typography";
 const ControlScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={[styles.header, typography.boldBody]}>Temperature Control</Text>
+      <Text style={[styles.header, typography.boldBody]}>
+        Temperature Control
+      </Text>
     </SafeAreaView>
   );
 };
@@ -19,7 +21,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    marginTop: 24,
     marginVertical: 12,
     marginHorizontal: "5%",
+    textAlign: "center",
   },
 });

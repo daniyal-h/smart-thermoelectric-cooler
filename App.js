@@ -12,6 +12,7 @@ import {
   Rajdhani_600SemiBold,
   Rajdhani_700Bold,
 } from "@expo-google-fonts/rajdhani";
+import { RFPercentage } from "react-native-responsive-fontsize";
 
 import ControlScreen from "./app/screens/ControlScreen";
 import TrendsScreen from "./app/screens/TrendsScreen";
@@ -46,6 +47,27 @@ export default function App() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
+          tabBarActiveTintColor: "#1e1e1e",
+          tabBarInactiveTintColor: "#6e6e6e",
+          tabBarActiveBackgroundColor: "#f8f9fb",
+          tabBarInactiveBackgroundColor: "transparent",
+          tabBarItemStyle: {
+            flex: 1,
+            borderRadius: 12,
+            overflow: "hidden",
+            marginHorizontal: 6,
+            marginTop: 6,
+          },
+          tabBarStyle: {
+            backgroundColor: "#e8ebf0",
+            height: RFPercentage(10),
+            borderTopWidth: 0,
+          },
+
+          tabBarLabelStyle: {
+            fontFamily: "Inter_600SemiBold",
+            fontSize: RFPercentage(1.75),
+          },
         }}
       >
         <Tab.Screen
