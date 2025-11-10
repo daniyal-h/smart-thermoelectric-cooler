@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import React from "react";
 
 import { typography } from "../constants/typography";
+import { colours } from "../constants/colours";
 
 const ControlScreen = () => {
   return (
@@ -19,11 +20,12 @@ export default ControlScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: "center",
+    backgroundColor: colours.backgroundPrimary
   },
   header: {
     marginTop: 24,
     marginVertical: 12,
     marginHorizontal: "5%",
-    textAlign: "center",
   },
 });
