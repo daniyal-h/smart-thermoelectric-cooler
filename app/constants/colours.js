@@ -23,6 +23,13 @@ export const colours = {
   textSecondary: "#555B61",
   textInverse: "#FFFFFF",
 
+  // Slider
+  gradientStart: "#4fc3f7",
+  gradientEnd: "#0288d1",
+  track: "#E5E5E5",
+  textSlider: "#1e88e5",
+  subtextSlider: "#555",
+
   // Borders, outlines, and minor UI
   border: "#C4D1DA",
   divider: "#E2E8ED",
