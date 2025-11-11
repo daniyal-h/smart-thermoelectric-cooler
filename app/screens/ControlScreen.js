@@ -29,6 +29,7 @@ const ControlScreen = () => {
           textSlider={colours.textSlider}
           subtextSlider={colours.subtextSlider}
           leftIcon={icons.minus}
+          centerIcon={icons.auto}
           rightIcon={icons.plus}
         />
       </View>
