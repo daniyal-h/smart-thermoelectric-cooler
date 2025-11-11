@@ -22,7 +22,7 @@ const ControlScreen = () => {
         </Text>
       </View>
 
-      <View style={styles.slider}>
+      <View style={styles.controlContainer}>
         <SliderControl
           gradientStart={colours.gradientStart}
           gradientEnd={colours.gradientEnd}
@@ -32,6 +32,11 @@ const ControlScreen = () => {
           centerIcon={icons.auto}
           rightIcon={icons.plus}
         />
+
+        <View style={styles.commandWindow}>
+          <Text style={typography.subsection}>Command Window</Text>
+          <Text style={typography.boldBody}>Cooling unit to 4.0°C...</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -51,13 +56,23 @@ const styles = StyleSheet.create({
     marginTop: height * 0.05,
     marginBottom: 8,
   },
-  slider: {
-    //backgroundColor: colours.backgroundSecondary,
-    width: "100%",
-    height: "45%",
+  controlContainer: {
+    flex: 1,
+    justifyContent: "space-evenly",
+  },
+  commandWindow: {
+    backgroundColor: colours.backgroundSecondary,
     borderRadius: 16,
-    marginBottom: height * 0.15,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    borderWidth: 0.5,
+    borderColor: "rgba(0,0,0,0.05)",
   },
 });
