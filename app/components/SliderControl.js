@@ -36,10 +36,10 @@ const SliderControl = ({
         max={25}
         step={0.5}
         onChange={debouncedUpdate}
-        subTitle="Cool to"
+        subTitle="Cooling"
         unit="°C"
         thumbRadius={20}
-        sliderWidth={40}
+        sliderWidth={36}
         radius={120}
         markerLineSize={0}
         isHideLines={true}
@@ -61,14 +61,14 @@ const SliderControl = ({
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.3 }]}
           onPress={() => handlePrecisionUpdate(-0.5)}
         >
-          {leftIcon(textSlider)}
+          {leftIcon(textSlider, 32)}
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.3 }]}
           onPress={() => handlePrecisionUpdate(0.5)}
         >
-          {rightIcon(textSlider)}
+          {rightIcon(textSlider, 32)}
         </Pressable>
       </View>
     </View>
