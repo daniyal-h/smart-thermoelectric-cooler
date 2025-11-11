@@ -1,10 +1,12 @@
 import { View, Pressable, StyleSheet } from "react-native";
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { RadialSlider } from "react-native-radial-slider";
-import _, { pad } from "lodash";
+import _ from "lodash";
 import { RFValue } from "react-native-responsive-fontsize";
 
 const SliderControl = ({
+  temp,
+  setTemp,
   gradientStart,
   gradientEnd,
   track,
@@ -14,9 +16,6 @@ const SliderControl = ({
   centerIcon,
   rightIcon,
 }) => {
-  // temp value
-  const [temp, setTemp] = useState(20.5);
-
   // debounce delay for rapid changes
   const debouncedUpdate = useCallback(
     _.debounce((newTemp) => {

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
@@ -10,6 +11,9 @@ import SliderControl from "../components/SliderControl";
 const { width, height } = Dimensions.get("window");
 
 const ControlScreen = () => {
+  const mockCurrentTemp = 20.5;
+  const [temp, setTemp] = useState(mockCurrentTemp);
+
   return (
     <SafeAreaView style={styles.container}>
       <View>
@@ -18,12 +22,14 @@ const ControlScreen = () => {
         </Text>
 
         <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
-          Current: 20.5°C
+          Current: {mockCurrentTemp}°C
         </Text>
       </View>
 
       <View style={styles.controlContainer}>
         <SliderControl
+          temp={temp}
+          setTemp={setTemp}
           gradientStart={colours.gradientStart}
           gradientEnd={colours.gradientEnd}
           textSlider={colours.textSlider}
@@ -35,7 +41,9 @@ const ControlScreen = () => {
 
         <View style={styles.commandWindow}>
           <Text style={typography.subsection}>Command Window</Text>
-          <Text style={typography.boldBody}>Cooling unit to 4.0°C...</Text>
+          <Text style={typography.boldBody}>
+            Cooling unit to {temp.toFixed(1)}°C...
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -58,6 +66,7 @@ const styles = StyleSheet.create({
   },
   controlContainer: {
     flex: 1,
+    marginTop: 16,
     justifyContent: "space-evenly",
   },
   commandWindow: {
