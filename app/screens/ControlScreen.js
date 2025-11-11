@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
+import icons from "../constants/icons";
 
 import SliderControl from "../components/SliderControl";
 
@@ -22,7 +23,14 @@ const ControlScreen = () => {
       </View>
 
       <View style={styles.slider}>
-        <SliderControl contentStyle={typography.smallDisplay} />
+        <SliderControl
+          gradientStart={colours.gradientStart}
+          gradientEnd={colours.gradientEnd}
+          textSlider={colours.textSlider}
+          subtextSlider={colours.subtextSlider}
+          leftIcon={icons.minus}
+          rightIcon={icons.plus}
+        />
       </View>
     </SafeAreaView>
   );

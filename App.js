@@ -21,7 +21,7 @@ import icons from "./app/constants/icons";
 import { colours } from "./app/constants/colours";
 
 const Tab = createBottomTabNavigator();
-const ICON_SIZE = 30;
+const ICON_SIZE = 24;
 
 export default function App() {
   const [fontsLoaded] = useFonts({
