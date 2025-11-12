@@ -14,6 +14,7 @@ const ControlScreen = () => {
   const mockCurrentTemp = 20.5;
   const [isOn, setIsOn] = useState(false); // default to off
   const [temp, setTemp] = useState(mockCurrentTemp);
+  const [unitTemp, setUnitTemp] = useState(mockCurrentTemp);
 
   return (
     <SafeAreaView
@@ -35,12 +36,14 @@ const ControlScreen = () => {
         <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
           Current: {mockCurrentTemp}°C
         </Text>
+        <Text style={[{ textAlign: "center" }, typography.caption]}>updated 33s ago</Text>
       </View>
 
       <View style={styles.controlContainer}>
         <SliderControl
           isOn={isOn}
           temp={temp}
+          unitTemp={unitTemp}
           setTemp={setTemp}
           gradientStart={colours.gradientStart}
           gradientEnd={colours.gradientEnd}
@@ -89,9 +92,9 @@ const ControlScreen = () => {
               !isOn && { opacity: 0.6 },
             ]}
           >
-            <Text style={typography.subsection}>Command Window</Text>
+            <Text style={typography.subtitle}>Command Window</Text>
             {isOn ? (
-              <Text style={typography.boldBody}>
+              <Text style={typography.body}>
                 Cooling unit to {temp.toFixed(1)}°C...
               </Text>
             ) : (
