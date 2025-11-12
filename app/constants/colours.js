@@ -2,6 +2,7 @@ export const colours = {
   // Base backgrounds
   backgroundPrimary: "#E9F2F9",
   backgroundSecondary: "#D7E4EC",
+  backgroundOff: "#CFD8DC",
 
   // Accent (temperature control highlight)
   accentCool: "#56CCF2",

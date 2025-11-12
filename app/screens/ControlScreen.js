@@ -16,7 +16,17 @@ const ControlScreen = () => {
   const [temp, setTemp] = useState(mockCurrentTemp);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        {
+          // toggle background colour by system status
+          backgroundColor: isOn
+            ? colours.backgroundPrimary
+            : colours.backgroundOff,
+        },
+      ]}
+    >
       <View>
         <Text style={[styles.header, typography.title]}>
           Temperature Control
@@ -47,7 +57,11 @@ const ControlScreen = () => {
             style={({ pressed }) => [
               styles.powerButtonContainer,
               styles.shadowOutline,
-              { borderColor: isOn ? colours.buttonPrimary : colours.buttonDisabled},
+              {
+                borderColor: isOn
+                  ? colours.buttonPrimary
+                  : colours.buttonDisabled,
+              },
               pressed && { opacity: 0.7 },
             ]}
             onPress={() => setIsOn((prev) => !prev)} // toggle
@@ -97,7 +111,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colours.backgroundPrimary,
     paddingHorizontal: width * 0.05,
   },
   header: {
