@@ -3,6 +3,7 @@ import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { Feather } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 const icons = {
   control: (colour = "black", size = 24) => (
@@ -14,6 +15,9 @@ const icons = {
 
   power: (colour = "black", size = 24) => (
     <AntDesign name="poweroff" size={size} color={colour} />
+  ),
+  thermometer: (colour = "black", size = 24) => (
+    <FontAwesome6 name="temperature-half" size={size} color={colour} />
   ),
 
   plus: (colour = "black", size = 24) => (
