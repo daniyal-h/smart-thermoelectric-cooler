@@ -9,7 +9,7 @@ const SliderControl = ({
   isOn,
   temp,
   setTemp,
-  unitTemp,
+  liveReading,
   gradientStart,
   gradientEnd,
   track,
@@ -43,7 +43,7 @@ const SliderControl = ({
         min={0}
         max={25}
         step={0.5}
-        markerValue={unitTemp}
+        markerValue={liveReading}
         onChange={debouncedUpdate}
         subTitle={isOn ? "Cooling" : "System Off"}
         unit="°C"
@@ -65,6 +65,7 @@ const SliderControl = ({
                 { offset: "100%", color: colours.buttonDisabled },
               ]
         }
+        titleStyle={[styles.subtitle, { color: subtextSlider }]}
         subTitleStyle={[styles.subtitle, { color: subtextSlider }]}
         valueStyle={[
           styles.value,
@@ -78,6 +79,7 @@ const SliderControl = ({
         stroke={textSlider}
       />
 
+      {/* Convenient buttons */}
       <View style={styles.buttonRow}>
         <Pressable
           style={({ pressed }) => [
