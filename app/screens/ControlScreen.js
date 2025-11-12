@@ -29,6 +29,7 @@ const ControlScreen = () => {
 
       <View style={styles.controlContainer}>
         <SliderControl
+          isOn={isOn}
           temp={temp}
           setTemp={setTemp}
           gradientStart={colours.gradientStart}
@@ -78,7 +79,7 @@ const ControlScreen = () => {
                 Cooling unit to {temp.toFixed(1)}°C...
               </Text>
             ) : (
-              <Text style={typography.boldBody}>Cooling is off...</Text>
+              <Text style={typography.boldBody}>System is off...</Text>
             )}
           </View>
         </View>
