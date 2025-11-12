@@ -2,6 +2,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { Feather } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AntDesign from "@expo/vector-icons/AntDesign";
 
 const icons = {
   control: (colour = "black", size = 24) => (
@@ -9,6 +10,10 @@ const icons = {
   ),
   trends: (colour = "black", size = 24) => (
     <SimpleLineIcons name="graph" size={size} color={colour} />
+  ),
+
+  power: (colour = "black", size = 24) => (
+    <AntDesign name="poweroff" size={size} color={colour} />
   ),
 
   plus: (colour = "black", size = 24) => (

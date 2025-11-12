@@ -3,8 +3,10 @@ import { useCallback } from "react";
 import { RadialSlider } from "react-native-radial-slider";
 import _ from "lodash";
 import { RFValue } from "react-native-responsive-fontsize";
+import { colours } from "../constants/colours";
 
 const SliderControl = ({
+  isOn,
   temp,
   setTemp,
   gradientStart,
@@ -41,7 +43,7 @@ const SliderControl = ({
         max={25}
         step={0.5}
         onChange={debouncedUpdate}
-        subTitle="Cooling"
+        subTitle={isOn ? "Cooling" : "System Off"}
         unit="°C"
         thumbRadius={RFValue(20)}
         sliderWidth={RFValue(36)}
@@ -49,38 +51,64 @@ const SliderControl = ({
         markerLineSize={0}
         isHideLines={true}
         lineSpace={RFValue(4)}
+        thumbColor={isOn && colours.buttonPrimary}
         sliderTrackColor={track}
-        linearGradient={[
-          { offset: "0%", color: gradientStart },
-          { offset: "100%", color: gradientEnd },
+        linearGradient={
+          isOn
+            ? [
+                { offset: "0%", color: gradientStart },
+                { offset: "100%", color: gradientEnd },
+              ]
+            : [
+                { offset: "0%", color: colours.buttonDisabled },
+                { offset: "100%", color: colours.buttonDisabled },
+              ]
+        }
+        subTitleStyle={[styles.subtitle, { color: subtextSlider }]}
+        valueStyle={[
+          styles.value,
+          isOn ? { color: textSlider } : { color: colours.buttonDisabled },
         ]}
-        subTitleStyle={{fontFamily: "Rajdhani_600SemiBold", fontSize: RFValue(16), color: subtextSlider }}
-        valueStyle={{fontFamily: "Rajdhani_700Bold", fontSize: RFValue(70), color: textSlider }}
-        unitStyle={{fontFamily: "Rajdhani_600SemiBold", fontSize: RFValue(30), color: textSlider }}
+        unitStyle={[
+          styles.unit,
+          isOn ? { color: textSlider } : { color: colours.buttonDisabled },
+        ]}
         isHideButtons={true}
         stroke={textSlider}
       />
 
       <View style={styles.buttonRow}>
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && { opacity: 0.3 }]}
+          style={({ pressed }) => [
+            styles.button,
+            { borderColor: isOn ? "#1e88e5" : colours.buttonDisabled },
+            pressed && { opacity: 0.3 },
+          ]}
           onPress={() => handlePrecisionUpdate(-0.5)}
         >
-          {leftIcon(textSlider, 32)}
+          {leftIcon(isOn ? textSlider : colours.buttonDisabled, 32)}
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && { opacity: 0.3 }]}
+          style={({ pressed }) => [
+            styles.button,
+            { borderColor: isOn ? "#1e88e5" : colours.buttonDisabled },
+            pressed && { opacity: 0.3 },
+          ]}
           onPress={() => handleAutoSet()}
         >
-          {centerIcon(textSlider, 32)}
+          {centerIcon(isOn ? textSlider : colours.buttonDisabled, 32)}
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && { opacity: 0.3 }]}
+          style={({ pressed }) => [
+            styles.button,
+            { borderColor: isOn ? "#1e88e5" : colours.buttonDisabled },
+            pressed && { opacity: 0.3 },
+          ]}
           onPress={() => handlePrecisionUpdate(0.5)}
         >
-          {rightIcon(textSlider, 32)}
+          {rightIcon(isOn ? textSlider : colours.buttonDisabled, 32)}
         </Pressable>
       </View>
     </View>
@@ -92,13 +120,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 24,
-    marginTop: RFValue(-24),
+    marginTop: RFValue(-32),
   },
   button: {
     borderRadius: 100,
-    borderColor: "#1e88e5",
     borderWidth: 1.5,
     padding: 10,
+  },
+  subtitle: {
+    fontFamily: "Rajdhani_600SemiBold",
+    fontSize: RFValue(16),
+  },
+  value: {
+    fontFamily: "Rajdhani_700Bold",
+    fontSize: RFValue(70),
+  },
+  unit: {
+    fontFamily: "Rajdhani_600SemiBold",
+    fontSize: RFValue(30),
   },
 });
 
