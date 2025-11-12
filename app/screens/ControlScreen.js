@@ -43,14 +43,16 @@ const ControlScreen = () => {
 
         <View style={{ gap: 12 }}>
           <Pressable
+            // reflect power status with outline colour
             style={({ pressed }) => [
               styles.powerButtonContainer,
               styles.shadowOutline,
-              isOn && { borderColor: colours.buttonPrimary },
+              { borderColor: isOn ? colours.buttonPrimary : colours.buttonDisabled},
               pressed && { opacity: 0.7 },
             ]}
-            onPress={() => setIsOn((prev) => !prev)}
+            onPress={() => setIsOn((prev) => !prev)} // toggle
           >
+            {/* Make the power button toggle in text and colour */}
             <View style={styles.powerButton}>
               {!isOn ? (
                 <>
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderRadius: 16,
     borderColor: "rgba(0,0,0,0.05)",
   },
