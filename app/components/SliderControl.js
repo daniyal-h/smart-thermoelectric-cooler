@@ -1,8 +1,8 @@
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet, Platform } from "react-native";
 import { useCallback } from "react";
 import { RadialSlider } from "react-native-radial-slider";
 import _ from "lodash";
-import { RFValue } from "react-native-responsive-fontsize";
+import { RFValue, RFPercentage } from "react-native-responsive-fontsize";
 import { colours } from "../constants/colours";
 
 const SliderControl = ({
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 24,
-    marginTop: RFValue(-32),
+    marginTop: Platform.OS === "ios" ? RFPercentage(-8) : RFValue(-32),
   },
   button: {
     borderRadius: 100,
