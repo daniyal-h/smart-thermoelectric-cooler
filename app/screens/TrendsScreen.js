@@ -9,18 +9,20 @@ const { width, height } = Dimensions.get("window");
 const TrendsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={[typography.title, styles.header]}>Temperature Trends</Text>
+      <Text style={[typography.title, styles.header]}>Thermal Profile</Text>
 
-      <View style={styles.graph}></View>
+      <View style={styles.graph}>
+        <Text style={typography.subtitle}>Cooling Curve</Text>
+      </View>
 
       <View style={styles.insightsContainer}>
-        <Text style={typography.subtitle}>
-          Insights
-        </Text>
-        <Text>
-          Range: Cooled from 20.5
-          Cooling Time: 
-          Cooling Rate: 
+        <Text style={typography.subtitle}>Insights</Text>
+        <Text style={typography.body}>
+          Range: <Text style={typography.boldBody}>20.5°C → 4.0°C</Text>
+          {"\n"}
+          Cooling Time: <Text style={typography.boldBody}>11m 13s</Text>
+          {"\n"}
+          Cooling Rate: <Text style={typography.boldBody}>-1.47°C/min</Text>
         </Text>
       </View>
     </SafeAreaView>
@@ -32,7 +34,6 @@ export default TrendsScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //alignItems: "center",
     paddingHorizontal: width * 0.05,
     backgroundColor: colours.trendsBackgroundPrimary,
   },
@@ -43,15 +44,18 @@ const styles = StyleSheet.create({
   },
   graph: {
     marginVertical: 24,
-    backgroundColor: "skyblue",
-    justifyContent: "center",
-    flex: 1.5,
+    backgroundColor: colours.trendsBackgroundSecondary,
+    flex: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   insightsContainer: {
-    backgroundColor: "skyblue",
-    flex: 0.5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    backgroundColor: colours.trendsBackgroundSecondary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 6,
+    borderRadius: 12,
+    justifyContent: "center",
   },
 });
