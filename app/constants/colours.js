@@ -1,6 +1,7 @@
 export const colours = {
   // Base backgrounds
   backgroundPrimary: "#E9F2F9",
+  trendsBackgroundPrimary: "#F5F7FA",
   backgroundSecondary: "#D7E4EC",
   backgroundOff: "#CFD8DC",
 
