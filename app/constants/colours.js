@@ -1,7 +1,9 @@
 export const colours = {
   // Base backgrounds
   backgroundPrimary: "#E9F2F9",
+  trendsBackgroundPrimary: "#F5F7FA",
   backgroundSecondary: "#D7E4EC",
+  trendsBackgroundSecondary: "#D9E4F5",
   backgroundOff: "#CFD8DC",
 
   // Accent (temperature control highlight)
