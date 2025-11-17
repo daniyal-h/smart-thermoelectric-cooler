@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
@@ -7,6 +8,7 @@ import { colours } from "../constants/colours";
 import CoolingCurve from "../components/CoolingCurve";
 
 const { width, height } = Dimensions.get("window");
+const hPadding = 16;
 
 const TrendsScreen = () => {
   return (
@@ -50,12 +52,13 @@ const styles = StyleSheet.create({
     backgroundColor: colours.trendsBackgroundSecondary,
     flex: 1,
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: hPadding,
     paddingVertical: 12,
+    gap: 6,
   },
   insightsContainer: {
     backgroundColor: colours.trendsBackgroundSecondary,
-    paddingHorizontal: 16,
+    paddingHorizontal: hPadding,
     paddingVertical: 12,
     gap: 6,
     borderRadius: 12,
