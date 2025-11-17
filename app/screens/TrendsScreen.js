@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 
+import CoolingCurve from "../components/CoolingCurve";
+
 const { width, height } = Dimensions.get("window");
 
 const TrendsScreen = () => {
@@ -13,6 +15,7 @@ const TrendsScreen = () => {
 
       <View style={styles.graph}>
         <Text style={typography.subtitle}>Cooling Curve</Text>
+        <CoolingCurve />
       </View>
 
       <View style={styles.insightsContainer}>
