@@ -1,4 +1,11 @@
-import { StyleSheet, Text, View, Dimensions, Pressable } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  Pressable,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 
@@ -17,6 +24,7 @@ const ControlScreen = () => {
   const [isOn, setIsOn] = useState(false); // default to off
   const [temp, setTemp] = useState(mockCurrentTemp);
   const [liveReading, setLiveReading] = useState(mockCurrentTemp);
+  const [lastUpdateTime, setLastUpdateTime] = useState(37);
 
   return (
     <SafeAreaView
@@ -39,7 +47,7 @@ const ControlScreen = () => {
           Current: {mockCurrentTemp}°C
         </Text>
         <Text style={[{ textAlign: "center" }, typography.caption]}>
-          updated 33s ago
+          updated {lastUpdateTime}s ago
         </Text>
       </View>
 
@@ -63,7 +71,7 @@ const ControlScreen = () => {
           rightIcon={icons.plus}
         />
 
-        <View style={{ gap: 12 }}>
+        <View style={{ marginTop: 20, gap: 12 }}>
           <Pressable
             // reflect power status with outline colour
             style={({ pressed }) => [
@@ -126,7 +134,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.05,
   },
   header: {
-    marginTop: height * 0.05,
+    marginTop: height * 0.03,
     marginBottom: 8,
   },
   controlContainer: {
@@ -141,6 +149,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: RFValue(-100),
     marginTop: RFValue(80),
+    marginTop: Platform.OS === "ios" ? RFValue(60) : RFValue(82),
   },
   readingText: {
     fontFamily: "Rajdhani_600SemiBold",
