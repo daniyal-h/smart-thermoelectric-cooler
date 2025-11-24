@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
