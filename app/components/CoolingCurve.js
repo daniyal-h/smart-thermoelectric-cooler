@@ -1,81 +1,78 @@
-import { StyleSheet, Text, View, ScrollView } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
+import { LineChart } from "react-native-chart-kit";
+import { Dimensions, View, StyleSheet, Text } from "react-native";
+import { useState } from "react";
 
-const mockData = [
-  { value: 20.5, dataPointText: "20.5" },
-  { value: 19.8, dataPointText: "19.8" },
-  { value: 19.1, dataPointText: "19.1" },
-  { value: 18.4, dataPointText: "18.4" },
-  { value: 17.7, dataPointText: "17.7" },
-  { value: 17.0, dataPointText: "17.0" },
-  { value: 16.3, dataPointText: "16.3" },
-  { value: 15.6, dataPointText: "15.6" },
-  { value: 14.9, dataPointText: "14.9" },
-  { value: 14.2, dataPointText: "14.2" },
-  { value: 13.5, dataPointText: "13.5" },
-  { value: 12.8, dataPointText: "12.8" },
-  { value: 12.1, dataPointText: "12.1" },
-  { value: 11.4, dataPointText: "11.4" },
-  { value: 10.7, dataPointText: "10.7" },
-  { value: 10.0, dataPointText: "10.0" },
-  { value: 8.9, dataPointText: "8.9" },
-  { value: 7.7, dataPointText: "7.7" },
-  { value: 6.5, dataPointText: "6.5" },
-  { value: 5.3, dataPointText: "5.3" },
-  { value: 4.0, dataPointText: "4.0" },
-];
+import { colours } from "../constants/colours";
 
-const xLabels = [
-  "0s",
-  "30s",
-  "1m",
-  "1m30",
-  "2m",
-  "2m30",
-  "3m",
-  "3m30",
-  "4m",
-  "4m30",
-  "5m",
-  "5m30",
-  "6m",
-  "6m30",
-  "7m",
-  "7m30",
-  "8m",
-  "8m30",
-  "9m",
-  "9m30",
-  "10m",
-];
+const mockData = {
+  labels: ["0s", "1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m", "10m"],
+  datasets: [
+    {
+      data: [20.5, 19.1, 17.7, 16.3, 14.9, 13.5, 12.1, 10.7, 8.9, 6.5, 4.0],
+      color: (opacity = 1) => `rgba(30, 136, 229, ${opacity})`, // line color
+      strokeWidth: 2,
+    },
+  ],
+};
 
-const CoolingCurve = ({ width }) => {
-  const value = mockData[0].value + 2;
-  const maxValue = Math.floor(value / 2) * 2;
-  const stepValue = 2;
+const chartConfig = {
+  backgroundGradientFrom: colours.trendsBackgroundSecondary,
+  backgroundGradientTo: colours.trendsBackgroundSecondary,
+  decimalPlaces: 1, // one decimal place
+  color: (opacity = 1) => `rgba(30, 136, 229, ${opacity})`, // line color
+  labelColor: () => "#333", // axis labels
+  propsForDots: {
+    r: "3",
+    strokeWidth: "2",
+    stroke: "#1E88E5",
+  },
+  propsForBackgroundLines: {
+    strokeWidth: 0.5,
+    stroke: "#ddd",
+    strokeDasharray: "0", // solid lines
+  },
+};
+
+const { width } = Dimensions.get("window");
+
+const CoolingCurve = () => {
+  const [chartHeight, setChartHeight] = useState(0);
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ width: mockData.length * 50 + 40, alignItems: "center" }}
+    <View
+      style={styles.graph}
+      onLayout={(event) => {
+        const { height } = event.nativeEvent.layout;
+        setChartHeight(height);
+      }}
     >
-      <LineChart
-        data={mockData}
-        xAxisLabelTexts={xLabels}
-        width={mockData.length * 50 + 20}
-        maxValue={maxValue}
-        initialSpacing={20}
-        stepHeight={30}
-        stepValue={stepValue}
-        noOfSections={maxValue / stepValue}
-        isAnimated={true}
-        hideRules={true}
-        scrollToEnd={true}
-        endSpacing={20}
-      />
-    </ScrollView>
+      {chartHeight > 0 && (
+        <LineChart
+          data={mockData}
+          width={width * 0.9} // fits portrait screen
+          height={chartHeight}
+          yAxisSuffix="°C"
+          xLabelsOffset={6}
+          fromZero
+          withVerticalLines={false}
+          withHorizontalLines={false}
+          withDots={true}
+          chartConfig={chartConfig}
+          style={{ borderRadius: 12 }}
+        />
+      )}
+    </View>
   );
 };
 
 export default CoolingCurve;
+
+const styles = StyleSheet.create({
+  graph: {
+    alignItems: "center",
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "transparent",
+  },
+});
