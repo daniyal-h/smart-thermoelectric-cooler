@@ -23,9 +23,9 @@ const TrendsScreen = () => {
       <View style={styles.insightsContainer}>
         <Text style={typography.subtitle}>Insights</Text>
         <Text style={typography.body}>
-          Range: <Text style={typography.boldBody}>20.5°C → 4.0°C</Text>
+          Range: <Text style={typography.boldBody}>20.5°C → 5.5°C</Text>
           {"\n"}
-          Cooling Time: <Text style={typography.boldBody}>11m 13s</Text>
+          Cooling Time: <Text style={typography.boldBody}>10m 13s</Text>
           {"\n"}
           Cooling Rate: <Text style={typography.boldBody}>-1.47°C/min</Text>
         </Text>
