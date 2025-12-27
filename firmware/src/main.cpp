@@ -200,15 +200,16 @@ void runStateMachine() {
     /* ---------------- SERVING /api/status ---------------- */
     case SystemState::ServingApiStatus: {
         JsonDocument respJsonObj; // create JSON object
+        const char* systemStateStrs[] = { "Booting", "StartingServer", "ReadyForClientReq", "ServingApiCommand", "ServingApiStatus", "Cooling", "Error" };
+        respJsonObj["systemState"] = systemStateStrs[static_cast<int>(systemState)]; // add system state string
         respJsonObj["currentTemp"] = thermalState.currentTempC; // add current temp
         respJsonObj["targetTemp"] = thermalState.targetTempC; // add target temp
-        respJsonObj["state"] = systemState; // add system state
-        respJsonObj["lastUpdated"] = (millis() - lastTempTimeMs) / 1000; // add time since last temp read in seconds
+        respJsonObj["lastUpdated"] = (millis() - lastTempSampleMs) / 1000; // add time since last temp read in seconds
         respJsonObj["lastCommand"] = lastCommand; // add last command
 
         if (systemState == SystemState::Cooling) {
-            respJsonObj["coolingTimeSec"] = (millis() - coolingStartTimeMs) / 1000; // add cooling time
-            respJsonObj["rangeStart"] = coolingStartTempC; // add cooling start temp
+            respJsonObj["coolingTime"] = (millis() - coolingStartTimeMs) / 1000; // add cooling time
+            respJsonObj["coolingStartTemp"] = coolingStartTempC; // add cooling start temp
         }
 
         String respJsonStr;
@@ -245,15 +246,15 @@ void setup() { // called once at startup
     systemState = SystemState::Booting; // start in BOOT state
 }
 
-unsigned long lastTempTimeMs = 0;
+unsigned long lastTempSampleMs = 0;
 void loop() { // called repeatedly after setup
     unsigned long now = millis();
-    if (now - lastTempTimeMs >= 1000) { // update temperature every second
-        lastTempTimeMs = now;
+    if (now - lastTempSampleMs >= 1000) { // update temperature every second
+        lastTempSampleMs = now;
         readTemperature();
 
         tempHistory[tempHistIndex] = {millis(), thermalState.currentTempC }; // add new temp sample to history
-        tempHistIndex = (tempHistIndex + 1) % 600; // update history index (circular buffer)
+        tempHistIndex = (tempHistIndex + 1) % 600; // update history index (circular buffer of 600 samples)
     }
 
     runStateMachine(); // run state machine
