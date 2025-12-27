@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <ESPmDNS.h>
 
 /* =========================================================
    CONFIG CONSTANTS
@@ -143,6 +144,10 @@ void runStateMachine() {
     /* ---------------- STARTING SERVER ---------------- */
     case SystemState::StartingServer:
         if (wifiConnected()) {
+            MDNS.begin("esp32"); // begin mDNS at http://esp32.local to enable clinet to connect without knowing IP
+            Serial.print("ESP32 IP address: "); 
+            Serial.println(WiFi.localIP()); // print ESP32 IP address to serial for debugging
+
             server.on("/api/command", HTTP_POST, apiCommandHandler); // register /api/command endpoint and handler
             server.on("/api/status", HTTP_GET, apiStatusHandler); // register /api/status endpoint and handler
             server.on("/api/history", HTTP_GET, apiHistoryHandler); // register /api/history endpoint and handler
