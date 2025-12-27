@@ -25,10 +25,10 @@ const int PWM_RES_BITS = 8;  // 2^8 = 256 PWM levels
    GLOBAL VARIABLES & OBJECTS
    ========================================================= */
 /* ---------------- GLOBAL VARIABLES ---------------- */
-unsigned long coolingStartTimeMs = 0; // NEW
-float coolingStartTempC = 0.0f; // NEW
-String lastCommand; // NEW
-int tempHistIndex = 0; // NEW
+unsigned long coolingStartTimeMs = 0; // time at start of cooling
+float coolingStartTempC = 0.0f; // temp at start of cooling
+String lastCommand; // last command sent by client
+int tempHistIndex = 0; // index for temperature history buffer
 
 /* ---------------- GLOBAL OBJECTS ---------------- */
 WebServer server(80); // create HTTP server on port 80
@@ -37,10 +37,10 @@ OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
 DallasTemperature tempSensor(&oneWire); // object for requesting temperatures on OneWire bus
 SystemState systemState; // current system state
 ThermalState thermalState; // current thermal state
-TempSample tempHistory[600]; // NEW
+TempHistory tempHistory[600]; // temperature history for last 10 minutes (1 sample/s for 600 s)
 
 /* =========================================================
-   STATE
+    ENUMS & STRUCTS
    ========================================================= */
 /* ---------------- SYSTEM STATE ---------------- */
 enum class SystemState {
@@ -59,11 +59,10 @@ struct ThermalState {
     float targetTempC;
 };
 
-/* ---------------- HISTORY & METADATA ---------------- */   // NEW
-
-struct TempSample {
-    unsigned long tMs;
-    float tempC;
+/* ---------------- TEMP HISTORY ---------------- */
+struct TempHistory {
+    unsigned long timestampMs;
+    float temperatureC;
 };
 
 
@@ -104,19 +103,19 @@ void apiStatusHandler() {
     systemState = SystemState::ServingApiStatus; // set state to ServingApiStatus
 }
 
-void apiHistoryHandler() { // NEW
-    JsonDocument jsonRespObj;
-    JsonArray arr = jsonRespObj["samples"].to<JsonArray>();
+void apiHistoryHandler() {
+    JsonDocument respJsonObj; // create response JSON object
+    JsonArray histJsonArr = respJsonObj["history"].to<JsonArray>(); // get history field in response JSON object as JSON array
 
-    for (int i = 0; i < 600; i++) {
-        JsonObject o = arr.add<JsonObject>();
-        o["t"] = tempHistory[i].tMs;
-        o["temp"] = tempHistory[i].tempC;
+    for (int i = 0; i < 600; i++) { // loop through temp history
+        JsonObject jsonHistObj = histJsonArr.add<JsonObject>(); // get newly added JSON object in history JSON array
+        jsonHistObj["timestamp"] = tempHistory[i].timestampMs; // add timestamp to history JSON object
+        jsonHistObj["temperature"] = tempHistory[i].temperatureC; // add temperature to history JSON object
     }
 
-    String jsonRespStr;
-    serializeJson(jsonRespObj, jsonRespStr);
-    server.send(200, "application/json", jsonRespStr);
+    String respJsonStr; // create JSON response string
+    serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
+    server.send(200, "application/json", respJsonStr); // send JSON response containing history
 }
 
 /* =========================================================
@@ -171,8 +170,8 @@ void runStateMachine() {
                 thermalState.targetTempC = jsonReqObj["value"];
             }
 
-            coolingStartTimeMs = millis();
-            coolingStartTempC = thermalState.currentTempC;
+            coolingStartTimeMs = millis(); // set cooling start time
+            coolingStartTempC = thermalState.currentTempC; // set cooling start temp
             lastCommand = "Cooling unit to " + String(thermalState.targetTempC) + "°C";
 
             startCooling();
@@ -195,21 +194,21 @@ void runStateMachine() {
 
     /* ---------------- SERVING /api/status ---------------- */
     case SystemState::ServingApiStatus: {
-        JsonDocument jsonRespObj; // create JSON object
-        jsonRespObj["currentTemp"] = thermalState.currentTempC; // add current temp
-        jsonRespObj["targetTemp"] = thermalState.targetTempC; // add target temp
-        jsonRespObj["state"] = (systemState == SystemState::Cooling) ? "cooling" : "idle"; // NEW
-        jsonRespObj["lastUpdated"] = (millis() - lastTempTimeMs) / 1000; // add time since last temp read in seconds
-        jsonRespObj["lastCommand"] = lastCommand; // add last command
+        JsonDocument respJsonObj; // create JSON object
+        respJsonObj["currentTemp"] = thermalState.currentTempC; // add current temp
+        respJsonObj["targetTemp"] = thermalState.targetTempC; // add target temp
+        respJsonObj["state"] = systemState; // add system state
+        respJsonObj["lastUpdated"] = (millis() - lastTempTimeMs) / 1000; // add time since last temp read in seconds
+        respJsonObj["lastCommand"] = lastCommand; // add last command
 
         if (systemState == SystemState::Cooling) {
-            jsonRespObj["coolingTimeSec"] = (millis() - coolingStartTimeMs) / 1000; // NEW
-            jsonRespObj["rangeStart"] = coolingStartTempC; // NEW
+            respJsonObj["coolingTimeSec"] = (millis() - coolingStartTimeMs) / 1000; // add cooling time
+            respJsonObj["rangeStart"] = coolingStartTempC; // add cooling start temp
         }
 
-        String jsonRespStr;
-        serializeJson(jsonRespObj, jsonRespStr); // serialize JSON object to JSON string
-        server.send(200, "application/json", jsonRespStr); // send response as JSON string
+        String respJsonStr;
+        serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
+        server.send(200, "application/json", respJsonStr); // send response as JSON string
 
         systemState = SystemState::ReadyForClientReq; // move to ready state
         break;
@@ -248,8 +247,8 @@ void loop() { // called repeatedly after setup
         lastTempTimeMs = now;
         readTemperature();
 
-        tempHistory[tempHistIndex] = { millis(), thermalState.currentTempC }; // NEW
-        tempHistIndex = (tempHistIndex + 1) % 600; // NEW
+        tempHistory[tempHistIndex] = {millis(), thermalState.currentTempC }; // add new temp sample to history
+        tempHistIndex = (tempHistIndex + 1) % 600; // update history index (circular buffer)
     }
 
     runStateMachine(); // run state machine
