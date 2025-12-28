@@ -67,6 +67,7 @@ struct TempHistory {
 };
 
 
+
 /* =========================================================
    HELPER FUNCTIONS
    ========================================================= */
@@ -116,7 +117,14 @@ void apiHistoryHandler() {
 
     String respJsonStr; // create JSON response string
     serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
+    sendCorsHeaders(); // send CORS headers
     server.send(200, "application/json", respJsonStr); // send JSON response containing history
+}
+
+void sendCorsHeaders() { // Cross-Origin Resource Sharing headers, only useful if client is served from different origin
+    server.sendHeader("Access-Control-Allow-Origin", "*"); // allow requests from any origin
+    server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // allow GET, POST, OPTIONS methods
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type"); // allow Content-Type header
 }
 
 /* =========================================================
@@ -148,9 +156,18 @@ void runStateMachine() {
             Serial.print("ESP32 IP address: "); 
             Serial.println(WiFi.localIP()); // print ESP32 IP address to serial for debugging
 
-            server.on("/api/command", HTTP_POST, apiCommandHandler); // register /api/command endpoint and handler
-            server.on("/api/status", HTTP_GET, apiStatusHandler); // register /api/status endpoint and handler
-            server.on("/api/history", HTTP_GET, apiHistoryHandler); // register /api/history endpoint and handler
+            server.on("/api/command", HTTP_POST, apiCommandHandler); // handle POST /api/command requests
+            server.on("/api/status", HTTP_GET, apiStatusHandler); // handle GET /api/status requests
+            server.on("/api/history", HTTP_GET, apiHistoryHandler); // handle GET /api/history requests
+            server.onNotFound([]() { // handle unknown requests
+                if (server.method() == HTTP_OPTIONS) { // handle CORS preflight request
+                    sendCorsHeaders(); // send CORS headers
+                    server.send(204); // send empty response
+                } else { // handle other unknown requests
+                    sendCorsHeaders(); // send CORS headers
+                    server.send(404, "text/plain", "Not Found"); // send 404 Not Found
+                }
+            });
             server.begin(); // start HTTP server
             systemState = SystemState::ReadyForClientReq; // move to next state
         }
@@ -164,6 +181,7 @@ void runStateMachine() {
     /* ---------------- SERVING /api/command ---------------- */
     case SystemState::ServingApiCommand: {
         if (!jsonReqObj["cmd"].is<const char*>()) { // if cmd is missing, return error and go back to ready state
+            sendCorsHeaders(); // send CORS headers
             server.send(400, "application/json", "{\"error\":\"missing cmd\"}");
             systemState = SystemState::ReadyForClientReq;
             break;
@@ -181,16 +199,19 @@ void runStateMachine() {
 
             startCooling();
             systemState = SystemState::Cooling; // move to cooling state
+            sendCorsHeaders(); // send CORS headers
             server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
         }
         else if (cmd == "STOP_COOLING") {
             stopCooling(); // stop cooling
             lastCommand = "Cooling stopped";
             systemState = SystemState::ReadyForClientReq; // move to ready state
+            sendCorsHeaders(); // send CORS headers
             server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
         }
         
         else {
+            sendCorsHeaders(); // send CORS headers
             server.send(400, "application/json", "{\"error\":\"unknown cmd\"}"); // return 400 Bad Request
             systemState = SystemState::ReadyForClientReq; // move to ready state
         }
@@ -214,6 +235,7 @@ void runStateMachine() {
 
         String respJsonStr;
         serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
+        sendCorsHeaders(); // send CORS headers
         server.send(200, "application/json", respJsonStr); // send response as JSON string
 
         systemState = SystemState::ReadyForClientReq; // move to ready state
