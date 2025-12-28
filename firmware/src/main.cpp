@@ -28,7 +28,7 @@ const int PWM_RES_BITS = 8;  // 2^8 = 256 PWM levels
 /* ---------------- GLOBAL VARIABLES ---------------- */
 unsigned long coolingStartTimeMs = 0; // time at start of cooling
 float coolingStartTempC = 0.0f; // temp at start of cooling
-String lastCommand; // last command sent by client
+String lastCommand = "N/A"; // last command sent by client
 int tempHistIndex = 0; // index for temperature history buffer
 
 /* ---------------- GLOBAL OBJECTS ---------------- */
@@ -189,10 +189,22 @@ void runStateMachine() {
 
         String cmd = jsonReqObj["cmd"];
         if (cmd == "SET_TARGET_TEMP") {
-            if (jsonReqObj["value"].is<float>()) { // if value is missing, use default
-                thermalState.targetTempC = jsonReqObj["value"];
-            }
+            if (jsonReqObj["value"].is<float>()) {
+                float requestedTemp = jsonReqObj["value"];
+                if (requestedTemp < 0) { // if requested temp is everbelow 0, set it to 0, safety measure
+                    requestedTemp = 0;
+                }
 
+                if (requestedTemp >= thermalState.currentTempC) { // if requested temp >= current temp, stop cooling
+                    stopCooling();
+                    systemState = SystemState::ReadyForClientReq;
+                    sendCorsHeaders();
+                    server.send(200, "application/json", "{\"ok\":true,\"note\":\"target above current, cooling not needed\"}");
+                    break;
+                }
+
+                thermalState.targetTempC = requestedTemp; // set target temp
+            }
             coolingStartTimeMs = millis(); // set cooling start time
             coolingStartTempC = thermalState.currentTempC; // set cooling start temp
             lastCommand = "Cooling unit to " + String(thermalState.targetTempC) + "°C";
