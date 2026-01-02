@@ -38,7 +38,7 @@ OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
 DallasTemperature tempSensor(&oneWire); // object for requesting temperatures on OneWire bus
 SystemState systemState; // current system state
 ThermalState thermalState; // current thermal state
-TempHistory tempHistory[600]; // temperature history for last 10 minutes (1 sample/s for 600 s)
+TempHistory tempHistory[20]; // temperature history (2 samples/minute * 10 minutes = 20 samples)
 
 /* =========================================================
     ENUMS & STRUCTS
@@ -107,7 +107,7 @@ void apiHistoryHandler() {
     JsonDocument respJsonObj; // create response JSON object
     JsonArray histJsonArr = respJsonObj["history"].to<JsonArray>(); // get history field in response JSON object as JSON array
 
-    for (int i = 0; i < 600; i++) { // loop through temp history
+    for (int i = 0; i < 20; i++) { // loop through temp history
         JsonObject jsonHistObj = histJsonArr.add<JsonObject>(); // get newly added JSON object in history JSON array
         jsonHistObj["timestamp"] = tempHistory[i].timestampMs; // add timestamp to history JSON object
         jsonHistObj["temperature"] = tempHistory[i].temperatureC; // add temperature to history JSON object
@@ -294,12 +294,12 @@ void setup() { // called once at startup
 unsigned long lastTempSampleMs = 0;
 void loop() { // called repeatedly after setup
     unsigned long now = millis();
-    if (now - lastTempSampleMs >= 1000) { // update temperature every second
+    if (now - lastTempSampleMs >= 30000) { // update temperature every 30 seconds
         lastTempSampleMs = now;
         readTemperature();
 
         tempHistory[tempHistIndex] = {millis(), thermalState.currentTempC }; // add new temp sample to history
-        tempHistIndex = (tempHistIndex + 1) % 600; // update history index (circular buffer of 600 samples)
+        tempHistIndex = (tempHistIndex + 1) % 20; // update history index (circular buffer of 20 samples)
     }
 
     runStateMachine(); // run state machine
