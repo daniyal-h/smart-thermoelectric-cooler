@@ -66,8 +66,6 @@ struct TempHistory {
     float temperatureC;
 };
 
-
-
 /* =========================================================
    HELPER FUNCTIONS
    ========================================================= */
@@ -121,6 +119,18 @@ void apiHistoryHandler() {
     server.send(200, "application/json", respJsonStr); // send JSON response containing history
 }
 
+void apiPingHandler() {
+    JsonDocument respJsonObj;
+    respJsonObj["success"] = true;      // add success field to response JSON object
+    respJsonObj["uptimeMs"] = millis(); // add uptimeMs field to response JSON object
+
+    String respJsonStr;
+    serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
+
+    sendCorsHeaders(); // send CORS headers
+    server.send(200, "application/json", respJsonStr); // send JSON response
+}
+
 void sendCorsHeaders() { // Cross-Origin Resource Sharing headers, only useful if client is served from different origin
     server.sendHeader("Access-Control-Allow-Origin", "*"); // allow requests from any origin
     server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // allow GET, POST, OPTIONS methods
@@ -159,6 +169,7 @@ void runStateMachine() {
             server.on("/api/command", HTTP_POST, apiCommandHandler); // handle POST /api/command requests
             server.on("/api/status", HTTP_GET, apiStatusHandler); // handle GET /api/status requests
             server.on("/api/history", HTTP_GET, apiHistoryHandler); // handle GET /api/history requests
+            server.on("/api/ping", HTTP_GET, apiPingHandler); // handle GET /api/ping requests
             server.onNotFound([]() { // handle unknown requests
                 if (server.method() == HTTP_OPTIONS) { // handle CORS preflight request
                     sendCorsHeaders(); // send CORS headers
@@ -191,7 +202,7 @@ void runStateMachine() {
         if (cmd == "SET_TARGET_TEMP") {
             if (jsonReqObj["value"].is<float>()) {
                 float requestedTemp = jsonReqObj["value"];
-                if (requestedTemp < 0) { // if requested temp is everbelow 0, set it to 0, safety measure
+                if (requestedTemp < 0) { // if requested temp is ever below 0, set it to 0, safety measure
                     requestedTemp = 0;
                 }
 
