@@ -5,13 +5,14 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ESPmDNS.h>
+#include <HTTPClient.h>
 
 /* =========================================================
    CONFIG CONSTANTS
    ========================================================= */
 /* ---------------- WIFI ---------------- */
-const char* WIFI_SSID = "YOUR_WIFI";
-const char* WIFI_PASS = "YOUR_PASS";
+const char* WIFI_SSID = "nwokike"; // WiFi SSID
+const char* WIFI_PASS = "nwokike425"; // WiFi Password
 
 /* ---------------- GPIO ---------------- */
 const int MOSFET_PELTIER_PIN = 26;  // MOSFET pin for Peltier control
@@ -23,24 +24,6 @@ const int PWM_FREQ = 2000;   // PWM frequency in Hz
 const int PWM_RES_BITS = 8;  // 2^8 = 256 PWM levels
 
 /* =========================================================
-   GLOBAL VARIABLES & OBJECTS
-   ========================================================= */
-/* ---------------- GLOBAL VARIABLES ---------------- */
-unsigned long coolingStartTimeMs = 0; // time at start of cooling
-float coolingStartTempC = 0.0f; // temp at start of cooling
-String lastCommand = "N/A"; // last command sent by client
-int tempHistIndex = 0; // index for temperature history buffer
-
-/* ---------------- GLOBAL OBJECTS ---------------- */
-WebServer server(80); // create HTTP server on port 80
-JsonDocument jsonReqObj; // JSON request object
-OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
-DallasTemperature tempSensor(&oneWire); // object for requesting temperatures on OneWire bus
-SystemState systemState; // current system state
-ThermalState thermalState; // current thermal state
-TempHistory tempHistory[20]; // temperature history (2 samples/minute * 10 minutes = 20 samples)
-
-/* =========================================================
     ENUMS & STRUCTS
    ========================================================= */
 /* ---------------- SYSTEM STATE ---------------- */
@@ -48,8 +31,6 @@ enum class SystemState {
     Booting,
     StartingServer,
     ReadyForClientReq,
-    ServingApiCommand,
-    ServingApiStatus,
     Cooling,
     Error
 };
@@ -67,6 +48,25 @@ struct TempHistory {
 };
 
 /* =========================================================
+   GLOBAL VARIABLES & OBJECTS
+   ========================================================= */
+/* ---------------- GLOBAL VARIABLES ---------------- */
+unsigned long coolingStartTimeMs = 0; // time at start of cooling
+float coolingStartTempC = 0.0f; // temp at start of cooling
+String lastCommand = "N/A"; // last command sent by client
+int tempHistIndex = 0; // index for temperature history buffer
+unsigned long lastTempSampleMs = 0; // last time temperature was sampled
+
+/* ---------------- GLOBAL OBJECTS ---------------- */
+WebServer server(80); // create HTTP server on port 80
+JsonDocument jsonReqObj; // JSON request object
+OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
+DallasTemperature tempSensor(&oneWire); // object for requesting temperatures on OneWire bus
+SystemState systemState; // current system state
+ThermalState thermalState; // current thermal state
+TempHistory tempHistory[20]; // temperature history (2 samples/minute * 10 minutes = 20 samples)
+
+/* =========================================================
    HELPER FUNCTIONS
    ========================================================= */
 void setPeltierPower(uint8_t dutyCycle) {
@@ -82,6 +82,7 @@ void stopCooling() {
 }
 
 void connectToWifi() {
+    Serial.println("Connecting to WiFi...");
     WiFi.begin(WIFI_SSID, WIFI_PASS); // connect to wifi using credentials
 }
 
@@ -94,13 +95,86 @@ void readTemperature() {
     thermalState.currentTempC = tempSensor.getTempCByIndex(0);  // get measured temperature from sensor 0
 }
 
+void sendCorsHeaders() { // Cross-Origin Resource Sharing headers, only useful if client is served from different origin
+    server.sendHeader("Access-Control-Allow-Origin", "*"); // allow requests from any origin
+    server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // allow GET, POST, OPTIONS methods
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type"); // allow Content-Type header
+}
+
 void apiCommandHandler() {
     deserializeJson(jsonReqObj, server.arg("plain")); // deserialize JSON string to JSON object
-    systemState = SystemState::ServingApiCommand; // set state to ServingApiCommand
+    if (!jsonReqObj["cmd"].is<const char*>()) { // if cmd is missing, return error and go back to ready state
+        sendCorsHeaders(); // send CORS headers
+        server.send(400, "application/json", "{\"error\":\"missing cmd\"}");
+        systemState = SystemState::ReadyForClientReq;
+        return;
+    }
+
+    String cmd = jsonReqObj["cmd"];
+    if (cmd == "SET_TARGET_TEMP") {
+        if (jsonReqObj["value"].is<float>()) {
+            float requestedTemp = jsonReqObj["value"];
+            if (requestedTemp < 0) { // if requested temp is ever below 0, set it to 0, safety measure
+                requestedTemp = 0;
+            }
+
+            if (requestedTemp >= thermalState.currentTempC) { // if requested temp >= current temp, stop cooling
+                stopCooling();
+                systemState = SystemState::ReadyForClientReq;
+                sendCorsHeaders();
+                server.send(200, "application/json", "{\"ok\":true,\"note\":\"target above current, cooling not needed\"}");
+                return;
+            }
+
+            thermalState.targetTempC = requestedTemp; // set target temp
+            coolingStartTimeMs = millis(); // set cooling start time
+            coolingStartTempC = thermalState.currentTempC; // set cooling start temp
+            lastCommand = "Cooling unit to " + String(thermalState.targetTempC) + "°C";
+
+            startCooling();
+            systemState = SystemState::Cooling; // move to cooling state
+            sendCorsHeaders(); // send CORS headers
+            server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
+            return;
+        }
+    }
+    else if (cmd == "STOP_COOLING") {
+        stopCooling(); // stop cooling
+        lastCommand = "Cooling stopped";
+        systemState = SystemState::ReadyForClientReq; // move to ready state
+        sendCorsHeaders(); // send CORS headers
+        server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
+        return;
+    }
+    else {
+        sendCorsHeaders(); // send CORS headers
+        server.send(400, "application/json", "{\"error\":\"unknown cmd\"}"); // return 400 Bad Request
+        systemState = SystemState::ReadyForClientReq; // move to ready state
+        return;
+    }
 }
 
 void apiStatusHandler() {
-    systemState = SystemState::ServingApiStatus; // set state to ServingApiStatus
+    JsonDocument respJsonObj; // create JSON object
+    const char* systemStateStrs[] = { "Booting", "StartingServer", "ReadyForClientReq", "Cooling", "Error" };
+    respJsonObj["systemState"] = systemStateStrs[static_cast<int>(systemState)]; // add system state string
+    respJsonObj["currentTemp"] = thermalState.currentTempC; // add current temp
+    respJsonObj["targetTemp"] = thermalState.targetTempC; // add target temp
+    respJsonObj["lastUpdated"] = (millis() - lastTempSampleMs) / 1000; // add time since last temp read in seconds
+    respJsonObj["lastCommand"] = lastCommand; // add last command
+
+    if (systemState == SystemState::Cooling) {
+        respJsonObj["coolingTime"] = (millis() - coolingStartTimeMs) / 1000; // add cooling time
+        respJsonObj["coolingStartTemp"] = coolingStartTempC; // add cooling start temp
+    }
+
+    String respJsonStr;
+    serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
+    sendCorsHeaders(); // send CORS headers
+    server.send(200, "application/json", respJsonStr); // send response as JSON string
+
+    systemState = SystemState::ReadyForClientReq; // move to ready state
+    return;
 }
 
 void apiHistoryHandler() {
@@ -129,12 +203,6 @@ void apiPingHandler() {
 
     sendCorsHeaders(); // send CORS headers
     server.send(200, "application/json", respJsonStr); // send JSON response
-}
-
-void sendCorsHeaders() { // Cross-Origin Resource Sharing headers, only useful if client is served from different origin
-    server.sendHeader("Access-Control-Allow-Origin", "*"); // allow requests from any origin
-    server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // allow GET, POST, OPTIONS methods
-    server.sendHeader("Access-Control-Allow-Headers", "Content-Type"); // allow Content-Type header
 }
 
 /* =========================================================
@@ -189,82 +257,6 @@ void runStateMachine() {
         server.handleClient(); // handle client HTTP requests
         break;
 
-    /* ---------------- SERVING /api/command ---------------- */
-    case SystemState::ServingApiCommand: {
-        if (!jsonReqObj["cmd"].is<const char*>()) { // if cmd is missing, return error and go back to ready state
-            sendCorsHeaders(); // send CORS headers
-            server.send(400, "application/json", "{\"error\":\"missing cmd\"}");
-            systemState = SystemState::ReadyForClientReq;
-            break;
-        }
-
-        String cmd = jsonReqObj["cmd"];
-        if (cmd == "SET_TARGET_TEMP") {
-            if (jsonReqObj["value"].is<float>()) {
-                float requestedTemp = jsonReqObj["value"];
-                if (requestedTemp < 0) { // if requested temp is ever below 0, set it to 0, safety measure
-                    requestedTemp = 0;
-                }
-
-                if (requestedTemp >= thermalState.currentTempC) { // if requested temp >= current temp, stop cooling
-                    stopCooling();
-                    systemState = SystemState::ReadyForClientReq;
-                    sendCorsHeaders();
-                    server.send(200, "application/json", "{\"ok\":true,\"note\":\"target above current, cooling not needed\"}");
-                    break;
-                }
-
-                thermalState.targetTempC = requestedTemp; // set target temp
-            }
-            coolingStartTimeMs = millis(); // set cooling start time
-            coolingStartTempC = thermalState.currentTempC; // set cooling start temp
-            lastCommand = "Cooling unit to " + String(thermalState.targetTempC) + "°C";
-
-            startCooling();
-            systemState = SystemState::Cooling; // move to cooling state
-            sendCorsHeaders(); // send CORS headers
-            server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
-        }
-        else if (cmd == "STOP_COOLING") {
-            stopCooling(); // stop cooling
-            lastCommand = "Cooling stopped";
-            systemState = SystemState::ReadyForClientReq; // move to ready state
-            sendCorsHeaders(); // send CORS headers
-            server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
-        }
-        
-        else {
-            sendCorsHeaders(); // send CORS headers
-            server.send(400, "application/json", "{\"error\":\"unknown cmd\"}"); // return 400 Bad Request
-            systemState = SystemState::ReadyForClientReq; // move to ready state
-        }
-        break;
-    }
-
-    /* ---------------- SERVING /api/status ---------------- */
-    case SystemState::ServingApiStatus: {
-        JsonDocument respJsonObj; // create JSON object
-        const char* systemStateStrs[] = { "Booting", "StartingServer", "ReadyForClientReq", "ServingApiCommand", "ServingApiStatus", "Cooling", "Error" };
-        respJsonObj["systemState"] = systemStateStrs[static_cast<int>(systemState)]; // add system state string
-        respJsonObj["currentTemp"] = thermalState.currentTempC; // add current temp
-        respJsonObj["targetTemp"] = thermalState.targetTempC; // add target temp
-        respJsonObj["lastUpdated"] = (millis() - lastTempSampleMs) / 1000; // add time since last temp read in seconds
-        respJsonObj["lastCommand"] = lastCommand; // add last command
-
-        if (systemState == SystemState::Cooling) {
-            respJsonObj["coolingTime"] = (millis() - coolingStartTimeMs) / 1000; // add cooling time
-            respJsonObj["coolingStartTemp"] = coolingStartTempC; // add cooling start temp
-        }
-
-        String respJsonStr;
-        serializeJson(respJsonObj, respJsonStr); // serialize JSON object to JSON string
-        sendCorsHeaders(); // send CORS headers
-        server.send(200, "application/json", respJsonStr); // send response as JSON string
-
-        systemState = SystemState::ReadyForClientReq; // move to ready state
-        break;
-    }
-
     /* ---------------- COOLING ---------------- */
     case SystemState::Cooling:
         server.handleClient(); // handle client HTTP requests during cooling
@@ -288,10 +280,10 @@ void runStateMachine() {
    ========================================================= */
 void setup() { // called once at startup
     Serial.begin(115200); // initialize serial interface for debugging
+    Serial.println("=== SETUP START ===");
     systemState = SystemState::Booting; // start in BOOT state
 }
 
-unsigned long lastTempSampleMs = 0;
 void loop() { // called repeatedly after setup
     unsigned long now = millis();
     if (now - lastTempSampleMs >= 30000) { // update temperature every 30 seconds
