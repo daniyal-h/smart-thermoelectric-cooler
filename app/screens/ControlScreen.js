@@ -7,24 +7,78 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { RFValue } from "react-native-responsive-fontsize";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import icons from "../constants/icons";
+import { getStatus, sendCommand } from "../api/coolerApi";
+import { getTimeSinceString, getTimeSince } from "../utils/controlHelper";
 
 import SliderControl from "../components/SliderControl";
 
 const { width, height } = Dimensions.get("window");
 
 const ControlScreen = () => {
-  const mockCurrentTemp = 20.5;
+  const onThreshold = 90;
+  const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
+
   const [isOn, setIsOn] = useState(false); // default to off
-  const [temp, setTemp] = useState(mockCurrentTemp);
-  const [liveReading, setLiveReading] = useState(mockCurrentTemp);
-  const [lastUpdateTime, setLastUpdateTime] = useState(37);
+  const [userTarget, setUserTarget] = useState(null);
+  const [systemTarget, setSystemTarget] = useState(null);
+  const [liveReading, setLiveReading] = useState(null);
+  const [lastUpdateTime, setLastUpdateTime] = useState("");
+
+  const [initialized, setInitialized] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchStatus = async () => {
+        const { currentTemp, state, targetTemp, timestamp } = await getStatus();
+        if (!isActive) return;
+
+        // set UI based on status
+        setLiveReading(currentTemp);
+        setSystemTarget(targetTemp);
+
+        // initialize slider once from system state
+        if (!initialized) {
+          setUserTarget(targetTemp);
+          setInitialized(true);
+        }
+
+        // infer system state if latest update was less than the threshold
+        const timeSince = getTimeSince(timestamp);
+        setIsOn(timeSince <= onThreshold && state === "Cooling");
+
+        setLastUpdateTime(getTimeSinceString(timestamp));
+      };
+
+      // fetch on focus then periodically
+      fetchStatus();
+      const intervalId = setInterval(fetchStatus, updateSpeed);
+
+      return () => {
+        // clean up when no longer in focus
+        clearInterval(intervalId);
+        isActive = false;
+      };
+    }, [initialized])
+  );
+
+  // send command ONLY when user changes target
+  useEffect(() => {
+    if (!isOn) return;
+    if (!initialized) return;
+    if (userTarget === systemTarget) return;
+
+    sendCommand(userTarget);
+  }, [userTarget, systemTarget, initialized]);
 
   return (
     <SafeAreaView
@@ -44,24 +98,24 @@ const ControlScreen = () => {
         </Text>
 
         <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
-          Current: {mockCurrentTemp}°C
+          Current: {liveReading}°C
         </Text>
         <Text style={[{ textAlign: "center" }, typography.caption]}>
-          updated {lastUpdateTime}s ago
+          updated {lastUpdateTime}
         </Text>
       </View>
 
       <View style={styles.controlContainer}>
         <View style={styles.liveReading}>
           {icons.thermometer(colours.subtextSlider, 18)}
-          <Text style={styles.readingText}>20.5</Text>
+          <Text style={styles.readingText}>{liveReading}</Text>
         </View>
 
         <SliderControl
           isOn={isOn}
-          temp={temp}
+          temp={userTarget}
           liveReading={liveReading}
-          setTemp={setTemp}
+          setTemp={setUserTarget}
           gradientStart={colours.gradientStart}
           gradientEnd={colours.gradientEnd}
           textSlider={colours.textSlider}
@@ -112,7 +166,7 @@ const ControlScreen = () => {
             <Text style={typography.boldBody}>Command Window</Text>
             {isOn ? (
               <Text style={typography.body}>
-                Cooling unit to {temp.toFixed(1)}°C...
+                Cooling unit to {userTarget.toFixed(1)}°C...
               </Text>
             ) : (
               <Text style={typography.boldBody}>System is off...</Text>
