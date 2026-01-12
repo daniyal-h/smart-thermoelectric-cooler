@@ -38,14 +38,13 @@ The companion app enables remote control and displays real-time temperature tren
 *As a user, I want to remotely control the cooler so I can adjust the target temperature without physical access.*  
 
 #### Dev Tasks:
-- Integrate the mobile app with a cloud backend using RESTful APIs over HTTPS (3 hours).
-- Connect the control screen UI to backend command endpoints (send commands and receive) and validate successful command submission (4 hours).
+- Integrate the mobile app with a cloud backend using RESTful APIs over HTTPS (2 hours).
+- Connect the control screen UI to backend command endpoints (send commands and receive) and validate successful command submission (5 hours).
 
 ### User Story #4
 *As a user, I want to see temperature changes over time so I can verify cooling performance.* 
 
 #### Dev Tasks:
-- Implement backend telemetry ingestion and persistence for temperature and system state data (4 hours).
-- Implement periodic GET requests from the mobile app to retrieve recent telemetry data (4 hours).
+- Implement backend telemetry ingestion with periodic nature. (4 hours).
 - Populate the Trends screen graph using stored telemetry history from the backend (5 hours).
 - Create insights of simple metrics of the temperature trend (4 hours).
