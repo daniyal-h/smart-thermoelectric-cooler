@@ -7,13 +7,15 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { RFValue } from "react-native-responsive-fontsize";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import icons from "../constants/icons";
+import { getStatus } from "../api/coolerApi";
 
 import SliderControl from "../components/SliderControl";
 
@@ -25,6 +27,12 @@ const ControlScreen = () => {
   const [temp, setTemp] = useState(mockCurrentTemp);
   const [liveReading, setLiveReading] = useState(mockCurrentTemp);
   const [lastUpdateTime, setLastUpdateTime] = useState(37);
+
+  useFocusEffect(
+    useCallback(() => {
+      getStatus();
+    })
+  );
 
   return (
     <SafeAreaView
