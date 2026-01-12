@@ -21,11 +21,10 @@ import { getTimeSinceString, getTimeSince } from "../utils/controlHelper";
 import SliderControl from "../components/SliderControl";
 
 const { width, height } = Dimensions.get("window");
+const onThreshold = 90;
+const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const ControlScreen = () => {
-  const onThreshold = 90;
-  const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
-
   const [isOn, setIsOn] = useState(false); // default to off
   const [userTarget, setUserTarget] = useState(null);
   const [systemTarget, setSystemTarget] = useState(null);
