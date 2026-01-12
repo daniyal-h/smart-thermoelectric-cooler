@@ -73,6 +73,7 @@ const ControlScreen = () => {
 
   // send command ONLY when user changes target
   useEffect(() => {
+    if (!isOn) return;
     if (!initialized) return;
     if (userTarget === systemTarget) return;
 
