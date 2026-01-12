@@ -30,8 +30,21 @@ const ControlScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      getStatus();
-    })
+      let isActive = true;
+
+      const fetchStatus = async () => {
+        const { currentTemp, state, targetTemp, timestamp } = await getStatus();
+        if (!isActive) return;
+
+        setLiveReading(currentTemp);
+      };
+
+      fetchStatus();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
   );
 
   return (
@@ -52,7 +65,7 @@ const ControlScreen = () => {
         </Text>
 
         <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
-          Current: {mockCurrentTemp}°C
+          Current: {liveReading}°C
         </Text>
         <Text style={[{ textAlign: "center" }, typography.caption]}>
           updated {lastUpdateTime}s ago
@@ -62,7 +75,7 @@ const ControlScreen = () => {
       <View style={styles.controlContainer}>
         <View style={styles.liveReading}>
           {icons.thermometer(colours.subtextSlider, 18)}
-          <Text style={styles.readingText}>20.5</Text>
+          <Text style={styles.readingText}>{liveReading}</Text>
         </View>
 
         <SliderControl

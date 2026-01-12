@@ -1,5 +1,5 @@
 const cloud_url =
-  "https://d5uo13qpfc.execute-api.us-east-1.amazonaws.com/latestTelemetry?deviceId=cooler-01";
+  "https://d5uo13qpfc.execute-api.us-east-1.amazonaws.com/status?deviceId=cooler-01";
 
 export async function getStatus() {
   try {
@@ -12,7 +12,8 @@ export async function getStatus() {
 
     const data = await response.json(); // Parse the response body as JSON
     console.log(data);
-    // You can now work with the 'data' object in your application
+    return data;
+
   } catch (error) {
     console.error("There was a problem with the fetch operation:", error);
   }
