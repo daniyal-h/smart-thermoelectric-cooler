@@ -37,6 +37,12 @@ const ControlScreen = () => {
         if (!isActive) return;
 
         setLiveReading(currentTemp);
+        setTemp(targetTemp);
+
+        const timeSince = Math.floor(Date.now() /1000 - timestamp);
+
+        console.log(timeSince)
+        setLastUpdateTime(timeSince);
       };
 
       fetchStatus();
