@@ -1,15 +1,40 @@
 import { StyleSheet, Text, View, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
+import { ingestTelemetry } from "../api/coolerApi";
 
 import CoolingCurve from "../components/CoolingCurve";
 
 const { width, height } = Dimensions.get("window");
 const hPadding = 16;
+const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const TrendsScreen = () => {
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchTelemetryHistory = async () => {
+        const data = await ingestTelemetry();
+        if (!isActive) return;
+      };
+
+      // fetch on focus then periodically
+      fetchTelemetryHistory();
+      const intervalId = setInterval(fetchTelemetryHistory, updateSpeed);
+
+      return () => {
+        // clean up when no longer in focus
+        clearInterval(intervalId);
+        isActive = false;
+      };
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={[typography.title, styles.header]}>Thermal Profile</Text>

@@ -22,6 +22,11 @@ export async function sendCommand(value) {
   });
 }
 
+export async function ingestTelemetry() {
+  const url = cloud_url + "/telemetryHistory" + "?deviceId=" + deviceId;
+  return await apiRunner(url);
+}
+
 async function apiRunner(url, options = {}) {
   try {
     const response = await fetch(url, options);
