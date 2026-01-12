@@ -16,6 +16,7 @@ import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import icons from "../constants/icons";
 import { getStatus } from "../api/coolerApi";
+import { getTimeSince } from "../utils/controlHelper";
 
 import SliderControl from "../components/SliderControl";
 
@@ -38,18 +39,16 @@ const ControlScreen = () => {
 
         setLiveReading(currentTemp);
         setTemp(targetTemp);
+        setIsOn(state === "Cooling");
 
-        const timeSince = Math.floor(Date.now() /1000 - timestamp);
-
-        console.log(timeSince)
-        setLastUpdateTime(timeSince);
+        const timeSince = Math.floor(Date.now() / 1000 - timestamp); // TODO: Make it to mins if >60s
+        
+        setLastUpdateTime(getTimeSince(timestamp));
       };
 
       fetchStatus();
 
-      return () => {
-        isActive = false;
-      };
+      return () => (isActive = false);
     }, [])
   );
 
@@ -74,7 +73,7 @@ const ControlScreen = () => {
           Current: {liveReading}°C
         </Text>
         <Text style={[{ textAlign: "center" }, typography.caption]}>
-          updated {lastUpdateTime}s ago
+          updated {lastUpdateTime}
         </Text>
       </View>
 
