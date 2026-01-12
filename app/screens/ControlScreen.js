@@ -16,7 +16,7 @@ import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import icons from "../constants/icons";
 import { getStatus } from "../api/coolerApi";
-import { getTimeSince } from "../utils/controlHelper";
+import { getTimeSinceString, getTimeSince } from "../utils/controlHelper";
 
 import SliderControl from "../components/SliderControl";
 
@@ -24,6 +24,7 @@ const { width, height } = Dimensions.get("window");
 
 const ControlScreen = () => {
   const mockCurrentTemp = 20.5;
+  const onThreshold = 90;
   const [isOn, setIsOn] = useState(false); // default to off
   const [temp, setTemp] = useState(mockCurrentTemp);
   const [liveReading, setLiveReading] = useState(mockCurrentTemp);
@@ -37,13 +38,15 @@ const ControlScreen = () => {
         const { currentTemp, state, targetTemp, timestamp } = await getStatus();
         if (!isActive) return;
 
+        // set UI based on status
         setLiveReading(currentTemp);
         setTemp(targetTemp);
-        setIsOn(state === "Cooling");
 
-        const timeSince = Math.floor(Date.now() / 1000 - timestamp); // TODO: Make it to mins if >60s
-        
-        setLastUpdateTime(getTimeSince(timestamp));
+        // infer system state if latest update was less than the threshold
+        const timeSince = getTimeSince(timestamp);
+        setIsOn(timeSince <= onThreshold ? state === "Cooling" : false);
+
+        setLastUpdateTime(getTimeSinceString(timestamp));
       };
 
       fetchStatus();
