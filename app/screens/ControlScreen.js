@@ -41,7 +41,13 @@ const ControlScreen = () => {
       const fetchStatus = async () => {
         const data = await getStatus();
         if (!isActive) return;
-        if (!data.ok) return;
+        if (!data && !data.ok) {
+          setIsBackendConnected(false);
+          return;
+        }
+
+        setIsBackendConnected(true);
+        const { currentTemp, state, targetTemp, timestamp } = data;
 
         // set UI based on status
         setLiveReading(currentTemp);
