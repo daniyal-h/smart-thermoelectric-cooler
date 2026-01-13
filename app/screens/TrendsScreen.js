@@ -6,6 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import { ingestTelemetry } from "../api/coolerApi";
+import { getTelemetryArray } from "../utils/trendsHelper";
 
 import CoolingCurve from "../components/CoolingCurve";
 
@@ -20,6 +21,7 @@ const TrendsScreen = () => {
 
       const fetchTelemetryHistory = async () => {
         const data = await ingestTelemetry();
+        const telemetries = getTelemetryArray(data);
         if (!isActive) return;
       };
 

@@ -3,7 +3,7 @@ import { Dimensions, View, StyleSheet } from "react-native";
 import { useState } from "react";
 
 import { colours } from "../constants/colours";
-import rectifyLiveReadings from "../utils/trendsHelper";
+import { rectifyLiveReadings } from "../utils/trendsHelper";
 
 const mockDataOnly = [
   20.5, 19.8, 19.1, 18.4, 17.7, 17.0, 16.3, 15.6, 14.9, 14.2, 13.5, 12.8, 12.1,

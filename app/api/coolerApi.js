@@ -36,7 +36,7 @@ async function apiRunner(url, options = {}) {
     }
 
     const data = await response.json(); // Parse the response body as JSON
-    console.log(data);
+    //console.log(data);
     return data;
   } catch (error) {
     console.error("There was a problem with the fetch operation:", error);
