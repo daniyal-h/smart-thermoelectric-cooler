@@ -41,7 +41,7 @@ const ControlScreen = () => {
       const fetchStatus = async () => {
         const data = await getStatus();
         if (!isActive) return;
-        if (!data && !data.ok) {
+        if (!data) {
           setIsBackendConnected(false);
           return;
         }

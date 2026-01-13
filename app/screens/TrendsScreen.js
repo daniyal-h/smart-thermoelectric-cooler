@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Dimensions, Alert } from "react-native";
+import { StyleSheet, Text, View, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -22,8 +22,9 @@ const TrendsScreen = () => {
       const fetchTelemetryHistory = async () => {
         const data = await ingestTelemetry(); // get history
         if (!isActive) return;
-        if (!data.ok) {
-          Alert.alert("Error", "No data found in backend");
+        if (!data) {
+          // TODO
+          return;
         }
         
         // put history in timestamp-temp array form

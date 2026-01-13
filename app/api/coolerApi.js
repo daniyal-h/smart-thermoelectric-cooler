@@ -39,12 +39,6 @@ async function apiRunner(url, options = {}) {
     console.log(data);
     return data;
   } catch (error) {
-      return {
-      ok: false,
-      status: null,
-      error: "network_error",
-    };
+    console.log("Error during fetch:", error);
   }
 }
-
-// TODO: Return something when failed (null right now will break UI)
