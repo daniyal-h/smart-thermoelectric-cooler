@@ -21,17 +21,17 @@ import { getTimeSinceString, getTimeSince } from "../utils/controlHelper";
 import SliderControl from "../components/SliderControl";
 
 const { width, height } = Dimensions.get("window");
+const onThreshold = 90;
+const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const ControlScreen = () => {
-  const onThreshold = 90;
-  const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
-
   const [isOn, setIsOn] = useState(false); // default to off
   const [userTarget, setUserTarget] = useState(null);
   const [systemTarget, setSystemTarget] = useState(null);
   const [liveReading, setLiveReading] = useState(null);
   const [lastUpdateTime, setLastUpdateTime] = useState("");
 
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useFocusEffect(
@@ -39,8 +39,15 @@ const ControlScreen = () => {
       let isActive = true;
 
       const fetchStatus = async () => {
-        const { currentTemp, state, targetTemp, timestamp } = await getStatus();
+        const data = await getStatus();
         if (!isActive) return;
+        if (!data) {
+          setIsBackendConnected(false);
+          return;
+        }
+
+        setIsBackendConnected(true);
+        const { currentTemp, state, targetTemp, timestamp } = data;
 
         // set UI based on status
         setLiveReading(currentTemp);
@@ -97,12 +104,20 @@ const ControlScreen = () => {
           Temperature Control
         </Text>
 
-        <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
-          Current: {liveReading}°C
-        </Text>
-        <Text style={[{ textAlign: "center" }, typography.caption]}>
-          updated {lastUpdateTime}
-        </Text>
+        {isBackendConnected ? (
+          <View>
+            <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
+              Current: {liveReading}°C
+            </Text>
+            <Text style={[{ textAlign: "center" }, typography.caption]}>
+              updated {lastUpdateTime}
+            </Text>
+          </View>
+        ) : (
+          <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
+            Error connecting to Database
+          </Text>
+        )}
       </View>
 
       <View style={styles.controlContainer}>
@@ -125,54 +140,58 @@ const ControlScreen = () => {
           rightIcon={icons.plus}
         />
 
-        <View style={{ marginTop: 20, gap: 12 }}>
-          <Pressable
-            // reflect power status with outline colour
-            style={({ pressed }) => [
-              styles.powerButtonContainer,
-              styles.shadowOutline,
-              {
-                borderColor: isOn
-                  ? colours.buttonPrimary
-                  : colours.buttonDisabled,
-              },
-              pressed && { opacity: 0.7 },
-            ]}
-            onPress={() => setIsOn((prev) => !prev)} // toggle
-          >
-            {/* Make the power button toggle in text and colour */}
-            <View style={styles.powerButton}>
-              {!isOn ? (
-                <>
-                  {icons.power()}
-                  <Text style={typography.boldBody}>Start Cooling</Text>
-                </>
+        {isBackendConnected ? (
+          <View style={{ marginTop: 20, gap: 12 }}>
+            <Pressable
+              // reflect power status with outline colour
+              style={({ pressed }) => [
+                styles.powerButtonContainer,
+                styles.shadowOutline,
+                {
+                  borderColor: isOn
+                    ? colours.buttonPrimary
+                    : colours.buttonDisabled,
+                },
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={() => setIsOn((prev) => !prev)} // toggle
+            >
+              {/* Make the power button toggle in text and colour */}
+              <View style={styles.powerButton}>
+                {!isOn ? (
+                  <>
+                    {icons.power()}
+                    <Text style={typography.boldBody}>Start Cooling</Text>
+                  </>
+                ) : (
+                  <>
+                    {icons.power(colours.buttonPrimary)}
+                    <Text style={typography.boldBody}>Stop Cooling</Text>
+                  </>
+                )}
+              </View>
+            </Pressable>
+
+            <View
+              style={[
+                styles.commandWindow,
+                styles.shadowOutline,
+                !isOn && { opacity: 0.6 },
+              ]}
+            >
+              <Text style={typography.boldBody}>Command Window</Text>
+              {isOn ? (
+                <Text style={typography.body}>
+                  Cooling unit to {userTarget.toFixed(1)}°C...
+                </Text>
               ) : (
-                <>
-                  {icons.power(colours.buttonPrimary)}
-                  <Text style={typography.boldBody}>Stop Cooling</Text>
-                </>
+                <Text style={typography.boldBody}>System is off...</Text>
               )}
             </View>
-          </Pressable>
-
-          <View
-            style={[
-              styles.commandWindow,
-              styles.shadowOutline,
-              !isOn && { opacity: 0.6 },
-            ]}
-          >
-            <Text style={typography.boldBody}>Command Window</Text>
-            {isOn ? (
-              <Text style={typography.body}>
-                Cooling unit to {userTarget.toFixed(1)}°C...
-              </Text>
-            ) : (
-              <Text style={typography.boldBody}>System is off...</Text>
-            )}
           </View>
-        </View>
+        ) : (
+          <View />
+        )}
       </View>
     </SafeAreaView>
   );
