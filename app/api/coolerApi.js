@@ -39,7 +39,11 @@ async function apiRunner(url, options = {}) {
     //console.log(data);
     return data;
   } catch (error) {
-    console.error("There was a problem with the fetch operation:", error);
+      return {
+      ok: false,
+      status: null,
+      error: "network_error",
+    };
   }
 }
 
