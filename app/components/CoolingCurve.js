@@ -3,7 +3,7 @@ import { Dimensions, View, StyleSheet, Text } from "react-native";
 import { useState } from "react";
 
 import { colours } from "../constants/colours";
-import { rectifyLiveReadings } from "../utils/trendsHelper";
+import { getLabels, getTemperatures } from "../utils/trendsHelper";
 import { typography } from "../constants/typography";
 
 const mockDataOnly = [
@@ -28,14 +28,13 @@ const { width } = Dimensions.get("window");
 
 const CoolingCurve = ({ temperatures }) => {
   const [chartHeight, setChartHeight] = useState(0);
-
-  console.log(temperatures);
+  const labels = temperatures ? getLabels(temperatures.length) : null;
 
   const data = {
-    labels: ["0m", "1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m", "10m"],
+    labels,
     datasets: [
       {
-        data: temperatures, // sample by minute
+        data: getTemperatures(temperatures), // sample by minute
         color: (opacity = 1) => `rgba(30, 136, 229, ${opacity})`, // line color
         strokeWidth: 2,
       },
@@ -50,21 +49,21 @@ const CoolingCurve = ({ temperatures }) => {
         setChartHeight(height);
       }}
     >
-      {chartHeight > 0 && temperatures ? (
-          <LineChart
-            data={data}
-            width={width * 0.9} // fits portrait screen
-            height={chartHeight}
-            yAxisSuffix="°C"
-            formatYLabel={(y) => `${Math.round(y / 5) * 5}`} // rounds to nearest 5
-            xLabelsOffset={10}
-            fromZero
-            withVerticalLines={false}
-            withHorizontalLines={false}
-            withDots={true}
-            chartConfig={chartConfig}
-            style={{ borderRadius: 12 }}
-          />
+      {chartHeight > 0 && temperatures && data ? (
+        <LineChart
+          data={data}
+          width={width * 0.9} // fits portrait screen
+          height={chartHeight}
+          yAxisSuffix="°C"
+          formatYLabel={(y) => `${Math.round(y)}`} // rounds to nearest 5
+          xLabelsOffset={10}
+          fromZero
+          withVerticalLines={false}
+          withHorizontalLines={false}
+          withDots={true}
+          chartConfig={chartConfig}
+          style={{ borderRadius: 12 }}
+        />
       ) : (
         <Text style={typography.body}>No data found</Text>
       )}

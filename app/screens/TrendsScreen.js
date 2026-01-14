@@ -6,7 +6,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import { ingestTelemetry } from "../api/coolerApi";
-import { getTemperatures, getStartingTime } from "../utils/trendsHelper";
+import {
+  getTelemetries,
+  getStartingTime,
+  getLabels,
+} from "../utils/trendsHelper";
 
 import CoolingCurve from "../components/CoolingCurve";
 
@@ -15,7 +19,6 @@ const hPadding = 16;
 const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const TrendsScreen = () => {
-  const [timestamps, setTimestamps] = useState(null);
   const [temperatures, setTemperatures] = useState(null);
   const [startTime, setStartTime] = useState(null);
 
@@ -30,12 +33,13 @@ const TrendsScreen = () => {
         if (!data) {
           // TODO
           console.log("Telemetry history was empty!");
+          setTemperatures(null);
+          setStartTime(null);
           return;
         }
 
         // store history
-        const [ts, temps] = getTemperatures(data) // destructure tuple
-        setTimestamps(ts);
+        const [ts, temps] = getTelemetries(data); // destructure tuple
         setTemperatures(temps);
         setStartTime(getStartingTime(ts[0])); // start at oldest
       };
