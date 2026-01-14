@@ -10,6 +10,7 @@ import { getTelemetries, getStartingTime } from "../utils/trendsHelper";
 
 import CoolingCurve from "../components/CoolingCurve";
 import { useTarget } from "../context/TargetContext";
+import CoolingInsights from "../components/CoolingInsights";
 
 const { width, height } = Dimensions.get("window");
 const hPadding = 16;
@@ -18,6 +19,7 @@ const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 const TrendsScreen = () => {
   const { target } = useTarget();
   const [temperatures, setTemperatures] = useState(null);
+  const [timestamps, setTimestamps] = useState(null);
   const [startTime, setStartTime] = useState(null);
 
   useFocusEffect(
@@ -38,6 +40,7 @@ const TrendsScreen = () => {
         // store history
         const [ts, temps] = getTelemetries(data); // destructure tuple
         setTemperatures(temps);
+        setTimestamps(ts);
         setStartTime(getStartingTime(ts[0])); // start at oldest
       };
 
@@ -70,7 +73,7 @@ const TrendsScreen = () => {
               </Text>
             </Text>
 
-            <CoolingCurve temperatures={temperatures} />
+            <CoolingCurve temperatures={temperatures} target={target} />
           </>
         ) : (
           <Text style={[typography.body, { textAlign: "center" }]}>
@@ -83,13 +86,12 @@ const TrendsScreen = () => {
       <View style={styles.insightsContainer}>
         <Text style={typography.subtitle}>Insights</Text>
         {temperatures && startTime ? (
-          <Text style={typography.body}>
-            Range: <Text style={typography.boldBody}>20.5°C → 5.5°C</Text>
-            {"\n"}
-            Cooling Time: <Text style={typography.boldBody}>10m 13s</Text>
-            {"\n"}
-            Cooling Rate: <Text style={typography.boldBody}>-1.47°C/min</Text>
-          </Text>
+          <CoolingInsights
+            startTime={timestamps[0]}
+            finishTime={timestamps[timestamps.length - 1]}
+            startTemp={temperatures[0]}
+            finishTemp={temperatures[temperatures.length - 1]}
+          />
         ) : (
           <Text style={[typography.body, { textAlign: "center" }]}>
             No data found

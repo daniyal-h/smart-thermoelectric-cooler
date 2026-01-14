@@ -20,17 +20,29 @@ const chartConfig = {
 
 const { width } = Dimensions.get("window");
 
-const CoolingCurve = ({ temperatures }) => {
+const CoolingCurve = ({ temperatures, target }) => {
   const [chartHeight, setChartHeight] = useState(0);
-  const labels = temperatures ? getLabels(temperatures.length) : null;
+
+  // get data
+  const sampledTemperatures = getTemperatures(temperatures);
+  const labels = getLabels(temperatures.length);
+
+  // overlay with target to provide visual reference
+  const targetLine = new Array(sampledTemperatures.length).fill(target);
 
   const data = {
     labels,
     datasets: [
       {
-        data: getTemperatures(temperatures), // sample by minute
+        data: sampledTemperatures, // sample by minute
         color: (opacity = 1) => `rgba(30, 136, 229, ${opacity})`, // line color
         strokeWidth: 2,
+      },
+      {
+        data: targetLine,
+        color: () => "#1E88E5",
+        strokeWidth: 1,
+        withDots: false,
       },
     ],
   };
@@ -51,7 +63,7 @@ const CoolingCurve = ({ temperatures }) => {
           yAxisSuffix="°C"
           formatYLabel={(y) => `${Math.round(y)}`}
           xLabelsOffset={10}
-          fromZero
+          //fromZero
           withVerticalLines={false}
           withHorizontalLines={false}
           withDots={true}
