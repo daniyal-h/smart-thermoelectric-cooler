@@ -50,22 +50,24 @@ const CoolingCurve = ({ temperatures }) => {
         setChartHeight(height);
       }}
     >
-      {(chartHeight > 0 && temperatures) ? (
-        <LineChart
-          data={data}
-          width={width * 0.9} // fits portrait screen
-          height={chartHeight}
-          yAxisSuffix="°C"
-          formatYLabel={(y) => `${Math.round(y / 5) * 5}`} // rounds to nearest 5
-          xLabelsOffset={10}
-          fromZero
-          withVerticalLines={false}
-          withHorizontalLines={false}
-          withDots={true}
-          chartConfig={chartConfig}
-          style={{ borderRadius: 12 }}
-        />
-      ) : <Text style={typography.body}>No data found</Text> }
+      {chartHeight > 0 && temperatures ? (
+          <LineChart
+            data={data}
+            width={width * 0.9} // fits portrait screen
+            height={chartHeight}
+            yAxisSuffix="°C"
+            formatYLabel={(y) => `${Math.round(y / 5) * 5}`} // rounds to nearest 5
+            xLabelsOffset={10}
+            fromZero
+            withVerticalLines={false}
+            withHorizontalLines={false}
+            withDots={true}
+            chartConfig={chartConfig}
+            style={{ borderRadius: 12 }}
+          />
+      ) : (
+        <Text style={typography.body}>No data found</Text>
+      )}
     </View>
   );
 };

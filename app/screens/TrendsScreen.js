@@ -6,7 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import { ingestTelemetry } from "../api/coolerApi";
-import { getTemperatures } from "../utils/trendsHelper";
+import { getTemperatures, getStartingTime } from "../utils/trendsHelper";
 
 import CoolingCurve from "../components/CoolingCurve";
 
@@ -15,7 +15,8 @@ const hPadding = 16;
 const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const TrendsScreen = () => {
-  const [temperatures, setTemperatures] = useState(null);
+  const [telemetries, setTelemetries] = useState(null);
+  const [startTime, setStartTime] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -23,14 +24,17 @@ const TrendsScreen = () => {
 
       const fetchTelemetryHistory = async () => {
         const data = await ingestTelemetry(); // get history
+
         if (!isActive) return;
         if (!data) {
           // TODO
+          console.log("Telemetry history was empty!");
           return;
         }
 
         // put history in timestamp-temp array form
-        setTemperatures(getTemperatures(data));
+        setTelemetries(getTemperatures(data));
+        setStartTime(getStartingTime(telemetries[0][0])); // start at oldest
       };
 
       // fetch on focus then periodically
@@ -51,7 +55,10 @@ const TrendsScreen = () => {
 
       <View style={styles.graph}>
         <Text style={typography.subtitle}>Cooling Curve</Text>
-        <CoolingCurve temperatures={temperatures} />
+        <Text style={typography.body}>
+          Started: <Text style={typography.boldBody}>{startTime}</Text>
+        </Text>
+        <CoolingCurve temperatures={telemetries} />
       </View>
 
       <View style={styles.insightsContainer}>
