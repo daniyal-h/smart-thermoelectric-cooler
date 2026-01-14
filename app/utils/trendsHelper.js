@@ -7,16 +7,15 @@ export const rectifyLiveReadings = (data) => {
 };
 
 export const getTemperatures = (telemetries) => {
-  // return an array of arrays as data points (timestamp, temp)
+  // return an two arrays of timestamps and their temperatures
+  const timestamps = [];
   const temperatures = [];
   telemetries.forEach((telemetry) => {
-    temperatures.push([
-      telemetry["timestamp"],
-      parseFloat(telemetry["currentTemp"]),
-    ]);
+    temperatures.push(parseFloat(telemetry["currentTemp"]));
+    timestamps.push(telemetry["timestamp"]);
   });
 
-  return temperatures;
+  return [timestamps, temperatures];
 };
 
 export const getStartingTime = (timestamp) => {

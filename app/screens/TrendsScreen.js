@@ -15,7 +15,8 @@ const hPadding = 16;
 const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const TrendsScreen = () => {
-  const [telemetries, setTelemetries] = useState(null);
+  const [timestamps, setTimestamps] = useState(null);
+  const [temperatures, setTemperatures] = useState(null);
   const [startTime, setStartTime] = useState(null);
 
   useFocusEffect(
@@ -32,9 +33,11 @@ const TrendsScreen = () => {
           return;
         }
 
-        // put history in timestamp-temp array form
-        setTelemetries(getTemperatures(data));
-        setStartTime(getStartingTime(telemetries[0][0])); // start at oldest
+        // store history
+        const [ts, temps] = getTemperatures(data) // destructure tuple
+        setTimestamps(ts);
+        setTemperatures(temps);
+        setStartTime(getStartingTime(timestamps[0])); // start at oldest
       };
 
       // fetch on focus then periodically
@@ -58,7 +61,7 @@ const TrendsScreen = () => {
         <Text style={typography.body}>
           Started: <Text style={typography.boldBody}>{startTime}</Text>
         </Text>
-        <CoolingCurve temperatures={telemetries} />
+        <CoolingCurve temperatures={temperatures} />
       </View>
 
       <View style={styles.insightsContainer}>
