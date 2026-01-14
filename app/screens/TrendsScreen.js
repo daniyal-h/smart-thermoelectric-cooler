@@ -6,11 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { typography } from "../constants/typography";
 import { colours } from "../constants/colours";
 import { ingestTelemetry } from "../api/coolerApi";
-import {
-  getTelemetries,
-  getStartingTime,
-  getLabels,
-} from "../utils/trendsHelper";
+import { getTelemetries, getStartingTime } from "../utils/trendsHelper";
 
 import CoolingCurve from "../components/CoolingCurve";
 
@@ -31,7 +27,6 @@ const TrendsScreen = () => {
 
         if (!isActive) return;
         if (!data) {
-          // TODO
           console.log("Telemetry history was empty!");
           setTemperatures(null);
           setStartTime(null);
@@ -67,7 +62,12 @@ const TrendsScreen = () => {
           <>
             <Text style={typography.body}>
               Started: <Text style={typography.boldBody}>{startTime}</Text>
+              <Text style={typography.body}>
+                {"    "}
+                Target: <Text style={typography.boldBody}>{10}°C</Text>
+              </Text>
             </Text>
+
             <CoolingCurve temperatures={temperatures} />
           </>
         ) : (
