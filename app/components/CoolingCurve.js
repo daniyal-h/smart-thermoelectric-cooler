@@ -49,7 +49,7 @@ const CoolingCurve = ({ temperatures }) => {
           width={width * 0.9} // fits portrait screen
           height={chartHeight}
           yAxisSuffix="°C"
-          formatYLabel={(y) => `${Math.round(y)}`} // rounds to nearest 5
+          formatYLabel={(y) => `${Math.round(y)}`}
           xLabelsOffset={10}
           fromZero
           withVerticalLines={false}
