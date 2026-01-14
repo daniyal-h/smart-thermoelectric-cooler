@@ -60,23 +60,39 @@ const TrendsScreen = () => {
     <SafeAreaView style={styles.container}>
       <Text style={[typography.title, styles.header]}>Thermal Profile</Text>
 
+      {/* Display the cooling curve if the data is in hand */}
       <View style={styles.graph}>
         <Text style={typography.subtitle}>Cooling Curve</Text>
-        <Text style={typography.body}>
-          Started: <Text style={typography.boldBody}>{startTime}</Text>
-        </Text>
-        <CoolingCurve temperatures={temperatures} />
+        {temperatures && startTime ? (
+          <>
+            <Text style={typography.body}>
+              Started: <Text style={typography.boldBody}>{startTime}</Text>
+            </Text>
+            <CoolingCurve temperatures={temperatures} />
+          </>
+        ) : (
+          <Text style={[typography.body, { textAlign: "center" }]}>
+            No data found
+          </Text>
+        )}
       </View>
 
+      {/* Display the insights tab if the data is in hand */}
       <View style={styles.insightsContainer}>
         <Text style={typography.subtitle}>Insights</Text>
-        <Text style={typography.body}>
-          Range: <Text style={typography.boldBody}>20.5°C → 5.5°C</Text>
-          {"\n"}
-          Cooling Time: <Text style={typography.boldBody}>10m 13s</Text>
-          {"\n"}
-          Cooling Rate: <Text style={typography.boldBody}>-1.47°C/min</Text>
-        </Text>
+        {temperatures && startTime ? (
+          <Text style={typography.body}>
+            Range: <Text style={typography.boldBody}>20.5°C → 5.5°C</Text>
+            {"\n"}
+            Cooling Time: <Text style={typography.boldBody}>10m 13s</Text>
+            {"\n"}
+            Cooling Rate: <Text style={typography.boldBody}>-1.47°C/min</Text>
+          </Text>
+        ) : (
+          <Text style={[typography.body, { textAlign: "center" }]}>
+            No data found
+          </Text>
+        )}
       </View>
     </SafeAreaView>
   );

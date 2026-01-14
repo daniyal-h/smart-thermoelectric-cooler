@@ -1,15 +1,9 @@
 import { LineChart } from "react-native-chart-kit";
-import { Dimensions, View, StyleSheet, Text } from "react-native";
+import { Dimensions, View, StyleSheet } from "react-native";
 import { useState } from "react";
 
 import { colours } from "../constants/colours";
 import { getLabels, getTemperatures } from "../utils/trendsHelper";
-import { typography } from "../constants/typography";
-
-const mockDataOnly = [
-  20.5, 19.8, 19.1, 18.4, 17.7, 17.0, 16.3, 15.6, 14.9, 14.2, 13.5, 12.8, 12.1,
-  11.4, 10.7, 9.5, 8.3, 7.7, 6.8, 6.1, 5.5,
-];
 
 const chartConfig = {
   backgroundGradientFrom: colours.trendsBackgroundSecondary,
@@ -49,7 +43,7 @@ const CoolingCurve = ({ temperatures }) => {
         setChartHeight(height);
       }}
     >
-      {chartHeight > 0 && temperatures && data ? (
+      {chartHeight > 0 && (
         <LineChart
           data={data}
           width={width * 0.9} // fits portrait screen
@@ -64,8 +58,6 @@ const CoolingCurve = ({ temperatures }) => {
           chartConfig={chartConfig}
           style={{ borderRadius: 12 }}
         />
-      ) : (
-        <Text style={typography.body}>No data found</Text>
       )}
     </View>
   );
