@@ -37,7 +37,7 @@ const TrendsScreen = () => {
         const [ts, temps] = getTemperatures(data) // destructure tuple
         setTimestamps(ts);
         setTemperatures(temps);
-        setStartTime(getStartingTime(timestamps[0])); // start at oldest
+        setStartTime(getStartingTime(ts[0])); // start at oldest
       };
 
       // fetch on focus then periodically
