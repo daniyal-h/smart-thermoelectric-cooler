@@ -19,14 +19,16 @@ import { getStatus, sendCommand } from "../api/coolerApi";
 import { getTimeSinceString, getTimeSince } from "../utils/controlHelper";
 
 import SliderControl from "../components/SliderControl";
+import { useTarget } from "../context/TargetContext";
 
 const { width, height } = Dimensions.get("window");
 const onThreshold = 90;
 const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const ControlScreen = () => {
+  const {target, setTarget} = useTarget(); // target shared across screens
+
   const [isOn, setIsOn] = useState(false); // default to off
-  const [userTarget, setUserTarget] = useState(null);
   const [systemTarget, setSystemTarget] = useState(null);
   const [liveReading, setLiveReading] = useState(null);
   const [lastUpdateTime, setLastUpdateTime] = useState("");
@@ -55,7 +57,7 @@ const ControlScreen = () => {
 
         // initialize slider once from system state
         if (!initialized) {
-          setUserTarget(targetTemp);
+          setTarget(targetTemp);
           setInitialized(true);
         }
 
@@ -82,10 +84,10 @@ const ControlScreen = () => {
   useEffect(() => {
     if (!isOn) return;
     if (!initialized) return;
-    if (userTarget === systemTarget) return;
+    if (target === systemTarget) return;
 
-    sendCommand(userTarget);
-  }, [userTarget, systemTarget, initialized]);
+    sendCommand(target);
+  }, [target, systemTarget, initialized]);
 
   return (
     <SafeAreaView
@@ -128,9 +130,9 @@ const ControlScreen = () => {
 
         <SliderControl
           isOn={isOn}
-          temp={userTarget}
+          temp={target}
           liveReading={liveReading}
-          setTemp={setUserTarget}
+          setTemp={setTarget}
           gradientStart={colours.gradientStart}
           gradientEnd={colours.gradientEnd}
           textSlider={colours.textSlider}
@@ -182,7 +184,7 @@ const ControlScreen = () => {
               <Text style={typography.boldBody}>Command Window</Text>
               {isOn ? (
                 <Text style={typography.body}>
-                  Cooling unit to {userTarget.toFixed(1)}°C...
+                  Cooling unit to {target.toFixed(1)}°C...
                 </Text>
               ) : (
                 <Text style={typography.boldBody}>System is off...</Text>

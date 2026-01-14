@@ -9,12 +9,14 @@ import { ingestTelemetry } from "../api/coolerApi";
 import { getTelemetries, getStartingTime } from "../utils/trendsHelper";
 
 import CoolingCurve from "../components/CoolingCurve";
+import { useTarget } from "../context/TargetContext";
 
 const { width, height } = Dimensions.get("window");
 const hPadding = 16;
 const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
 
 const TrendsScreen = () => {
+  const { target } = useTarget();
   const [temperatures, setTemperatures] = useState(null);
   const [startTime, setStartTime] = useState(null);
 
@@ -64,7 +66,7 @@ const TrendsScreen = () => {
               Started: <Text style={typography.boldBody}>{startTime}</Text>
               <Text style={typography.body}>
                 {"    "}
-                Target: <Text style={typography.boldBody}>{10}°C</Text>
+                Target: <Text style={typography.boldBody}>{target}°C</Text>
               </Text>
             </Text>
 
