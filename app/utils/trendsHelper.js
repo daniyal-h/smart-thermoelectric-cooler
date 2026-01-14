@@ -6,12 +6,12 @@ export const rectifyLiveReadings = (data) => {
   return readings;
 };
 
-export const getTelemetryArray = (telemetries) => {
+export const getTemperatures = (telemetries) => {
   // return an array of arrays as data points (timestamp, temp)
-  const telemetryArr = [];
-  telemetries.forEach(telemetry => {
-    telemetryArr.push([telemetry["timestamp"], telemetry["currentTemp"]]);
-  })
+  const temperatures = [];
+  telemetries.forEach((telemetry) => {
+    temperatures.push(parseFloat(telemetry["currentTemp"]));
+  });
 
-  return telemetryArr;
-}
+  return temperatures;
+};
