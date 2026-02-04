@@ -4,15 +4,11 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <HTTPClient.h>
+#include <password.h>
 
 /* =========================================================
    CONFIG CONSTANTS
    ========================================================= */
-/* ---------------- WIFI ---------------- */
-const char* WIFI_SSID = "nwokike"; // WiFi SSID
-const char* WIFI_PASS = "nwokike425"; // WiFi Password
-
-
 /* ---------------- PINS AND PWM  - PASCHAL ---------------- */
 const int PELTIER1_PIN = 26;
 const int PELTIER2_PIN = 27;
@@ -59,7 +55,7 @@ unsigned long lastTelemMs = 0;   // last time telemetry history was sent
 unsigned long lastWifiRetryMs = 0; // last time wifi reconnect was attempted
 bool wifiEverConnected = false; // flag to track if wifi was ever connected
 unsigned long wifiAttemptStartMs = 0; // last time wifi connection attempt was started
-const unsigned long WIFI_TIMEOUT_MS = 10000; // 10 seconds
+const unsigned long WIFI_TIMEOUT_MS = 5000; // 5 seconds
 
 /* ---------------- GLOBAL OBJECTS ---------------- */
 OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
@@ -122,22 +118,8 @@ bool wifiConnected() {
 }
 
 void connectToWifi() {
-    if (wifiConnected()) return;
-
-    if (wifiAttemptStartMs == 0) { // start connection if not already trying
-        Serial.println("Starting WiFi connection...");
-        WiFi.begin(WIFI_SSID, WIFI_PASS);
-        wifiAttemptStartMs = millis();
-        return;
-    }
-    
-    if (millis() - wifiAttemptStartMs < WIFI_TIMEOUT_MS) { // still trying
-        return;
-    }
-
-    // timeout reached
-    Serial.println("WiFi unavailable, running offline");
-    wifiAttemptStartMs = 0; // allow retry later
+    Serial.println("Starting WiFi connection...");
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
 const char* systemStateToString(SystemState state) {
@@ -192,7 +174,7 @@ void pollCloudForCommand() { // new
     if (!wifiConnected()) return; // return if wifi is not connected
 
     HTTPClient cloudHttpClient; // create cloud HTTP client object
-    cloudHttpClient.begin("https://d5uo13qpfc.execute-api.us-east-1.amazonaws.com/command"); // begin connection to /command endpoint
+    cloudHttpClient.begin("https://d5uo13qpfc.execute-api.us-east-1.amazonaws.com/command?deviceId=cooler-01"); // begin connection to /command endpoint
     int httpCode = cloudHttpClient.GET(); // send GET request to cloud
 
     if (httpCode == 200) { // if HTTP response code is 200 (OK)
@@ -268,10 +250,9 @@ void runStateMachine() {
         thermalState.targetTempC = 5.0f; // default target temp (fridge)
 
         connectToWifi(); // connect to wifi
-
+        delay(5000); // wait for connection attempt
         setSystemState(SystemState::Idle); // set system state to Idle
         break;
-
 
     /* ---------------- IDLE ---------------- */
     case SystemState::Idle:
@@ -330,7 +311,24 @@ void loop() { // called repeatedly
         pollCloudForCommand(); // poll cloud for command
     }
 
-    if (!wifiConnected() && now - lastWifiRetryMs >= 60000) { // retry wifi connection every 60 seconds
+    // Case 1: Wi-Fi is connected now
+    if (wifiConnected()) {
+        if (!wifiEverConnected) { // first successful connection
+            wifiEverConnected = true;
+            Serial.println("WiFi connected for the first time");
+        } else if (lastWifiRetryMs > 0) { // reconnected after a disconnect
+            Serial.println("WiFi reconnected successfully");
+        }
+        lastWifiRetryMs = now; // update last check time
+    }
+
+    // Case 2: Wi-Fi not connected, retry if needed
+    if (!wifiConnected() && now - lastWifiRetryMs >= 60000) { // retry every 60 s
+        if (wifiEverConnected) {
+            Serial.println("WiFi disconnected, attempting to reconnect...");
+        } else {
+            Serial.println("WiFi not connected yet, attempting first connection...");
+        }
         lastWifiRetryMs = now;
         connectToWifi();
     }
