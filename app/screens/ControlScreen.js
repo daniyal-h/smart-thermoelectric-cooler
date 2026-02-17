@@ -23,7 +23,7 @@ import { useTarget } from "../context/TargetContext";
 
 const { width, height } = Dimensions.get("window");
 const onThreshold = 90;
-const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
+const updateSpeed = 10000; // every 10s
 
 const ControlScreen = () => {
   const {target, setTarget} = useTarget(); // target shared across screens
@@ -51,15 +51,19 @@ const ControlScreen = () => {
         setIsBackendConnected(true);
         const { currentTemp, state, targetTemp, timestamp } = data;
 
+        console.log(targetTemp);
+        console.log(initialized);
+
         // set UI based on status
         setLiveReading(currentTemp);
         setSystemTarget(targetTemp);
+        setTarget(targetTemp);
 
         // initialize slider once from system state
-        if (!initialized) {
-          setTarget(targetTemp);
-          setInitialized(true);
-        }
+        // if (!initialized) {
+        //   setTarget(targetTemp);
+        //   setInitialized(true);
+        // }
 
         // infer system state if latest update was less than the threshold
         const timeSince = getTimeSince(timestamp);

@@ -14,7 +14,7 @@ import CoolingInsights from "../components/CoolingInsights";
 
 const { width, height } = Dimensions.get("window");
 const hPadding = 16;
-const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
+const updateSpeed = 10000; // every 10s
 
 const TrendsScreen = () => {
   const { target } = useTarget();
