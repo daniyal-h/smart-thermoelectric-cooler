@@ -6,7 +6,9 @@ export async function getStatus() {
   return await apiRunner(url);
 }
 
-export async function sendCommand(value) {
+export async function sendCommand(value, isOn) {
+  console.log("System is Cooling: " + isOn);
+
   const url = cloud_url + "/command";
 
   return await apiRunner(url, {

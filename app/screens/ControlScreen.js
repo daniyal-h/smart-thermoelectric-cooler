@@ -51,19 +51,15 @@ const ControlScreen = () => {
         setIsBackendConnected(true);
         const { currentTemp, state, targetTemp, timestamp } = data;
 
-        console.log(targetTemp);
-        console.log(initialized);
-
         // set UI based on status
         setLiveReading(currentTemp);
         setSystemTarget(targetTemp);
-        setTarget(targetTemp);
 
         // initialize slider once from system state
-        // if (!initialized) {
-        //   setTarget(targetTemp);
-        //   setInitialized(true);
-        // }
+        if (!initialized) {
+          setTarget(targetTemp);
+          setInitialized(true);
+        }
 
         // infer system state if latest update was less than the threshold
         const timeSince = getTimeSince(timestamp);
@@ -90,7 +86,7 @@ const ControlScreen = () => {
     if (!initialized) return;
     if (target === systemTarget) return;
 
-    sendCommand(target);
+    sendCommand(target, isOn);
   }, [target, systemTarget, initialized]);
 
   return (
