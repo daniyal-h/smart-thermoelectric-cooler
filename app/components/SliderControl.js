@@ -5,6 +5,10 @@ import _ from "lodash";
 import { RFValue, RFPercentage } from "react-native-responsive-fontsize";
 import { colours } from "../constants/colours";
 
+import { sendCommand } from "../api/coolerApi";
+
+const idealFridgeTemp = 5.5;
+
 const SliderControl = ({
   isDesiredOn,
   isCooling,
@@ -34,7 +38,8 @@ const SliderControl = ({
   };
 
   const handleAutoSet = () => {
-    setTemp(5.5); // ideal fridge temp
+    setTemp(idealFridgeTemp); // ideal fridge temp
+    sendCommand(idealFridgeTemp, true);
   };
 
   let uiCoolingState;
