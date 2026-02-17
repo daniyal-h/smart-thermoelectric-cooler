@@ -35,6 +35,10 @@ async function apiRunner(url, options = {}) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    if (response.status === 204) {
+      return null; // no data received but successful request
+    }
+
     const data = await response.json(); // Parse the response body as JSON
     //console.log(data);
     return data;
