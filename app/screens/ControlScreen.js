@@ -231,7 +231,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: RFValue(-100),
-    marginTop: RFValue(80),
     marginTop: Platform.OS === "ios" ? RFValue(60) : RFValue(82),
   },
   readingText: {
