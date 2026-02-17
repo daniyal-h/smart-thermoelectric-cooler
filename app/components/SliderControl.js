@@ -6,7 +6,8 @@ import { RFValue, RFPercentage } from "react-native-responsive-fontsize";
 import { colours } from "../constants/colours";
 
 const SliderControl = ({
-  isOn,
+  isDesiredOn,
+  isCooling,
   temp,
   setTemp,
   liveReading,
@@ -25,7 +26,7 @@ const SliderControl = ({
       setTemp(newTemp);
       console.log("New Desired Value:", newTemp);
     }, 100),
-    [] // make sure it's created once
+    [], // make sure it's created once
   );
 
   const handlePrecisionUpdate = (updateVal) => {
@@ -36,6 +37,15 @@ const SliderControl = ({
     setTemp(4); // ideal fridge temp
   };
 
+  // const uiCoolingState = isDesiredOn ? "Starting" : isCooling ? "Cooling" : "System Off";
+  let uiCoolingState;
+
+  if (isDesiredOn) {
+    uiCoolingState = isCooling ? "Cooling" : "Starting";
+  } else {
+    uiCoolingState = isCooling ? "Stopping" : "System Off";
+  }
+
   return (
     <View>
       <RadialSlider
@@ -45,17 +55,17 @@ const SliderControl = ({
         step={0.5}
         markerValue={liveReading}
         onChange={debouncedUpdate}
-        subTitle={isOn ? "Cooling" : "System Off"}
+        subTitle={uiCoolingState}
         unit="°C"
         thumbRadius={RFValue(20)}
         sliderWidth={RFValue(36)}
         radius={RFValue(120)}
         isHideLines={false}
         lineSpace={1000}
-        thumbColor={isOn && colours.buttonPrimary}
+        thumbColor={isDesiredOn && colours.buttonPrimary}
         sliderTrackColor={track}
         linearGradient={
-          isOn
+          isDesiredOn
             ? [
                 { offset: "0%", color: gradientStart },
                 { offset: "100%", color: gradientEnd },
@@ -69,11 +79,15 @@ const SliderControl = ({
         subTitleStyle={[styles.subtitle, { color: subtextSlider }]}
         valueStyle={[
           styles.value,
-          isOn ? { color: textSlider } : { color: colours.buttonDisabled },
+          isDesiredOn
+            ? { color: textSlider }
+            : { color: colours.buttonDisabled },
         ]}
         unitStyle={[
           styles.unit,
-          isOn ? { color: textSlider } : { color: colours.buttonDisabled },
+          isDesiredOn
+            ? { color: textSlider }
+            : { color: colours.buttonDisabled },
         ]}
         isHideButtons={true}
         stroke={textSlider}
@@ -84,34 +98,34 @@ const SliderControl = ({
         <Pressable
           style={({ pressed }) => [
             styles.button,
-            { borderColor: isOn ? "#1e88e5" : colours.buttonDisabled },
+            { borderColor: isDesiredOn ? "#1e88e5" : colours.buttonDisabled },
             pressed && { opacity: 0.3 },
           ]}
           onPress={() => handlePrecisionUpdate(-0.5)}
         >
-          {leftIcon(isOn ? textSlider : colours.buttonDisabled, 32)}
+          {leftIcon(isDesiredOn ? textSlider : colours.buttonDisabled, 32)}
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [
             styles.button,
-            { borderColor: isOn ? "#1e88e5" : colours.buttonDisabled },
+            { borderColor: isDesiredOn ? "#1e88e5" : colours.buttonDisabled },
             pressed && { opacity: 0.3 },
           ]}
           onPress={() => handleAutoSet()}
         >
-          {centerIcon(isOn ? textSlider : colours.buttonDisabled, 32)}
+          {centerIcon(isDesiredOn ? textSlider : colours.buttonDisabled, 32)}
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [
             styles.button,
-            { borderColor: isOn ? "#1e88e5" : colours.buttonDisabled },
+            { borderColor: isDesiredOn ? "#1e88e5" : colours.buttonDisabled },
             pressed && { opacity: 0.3 },
           ]}
           onPress={() => handlePrecisionUpdate(0.5)}
         >
-          {rightIcon(isOn ? textSlider : colours.buttonDisabled, 32)}
+          {rightIcon(isDesiredOn ? textSlider : colours.buttonDisabled, 32)}
         </Pressable>
       </View>
     </View>
