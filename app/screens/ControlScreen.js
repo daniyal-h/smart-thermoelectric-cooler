@@ -26,9 +26,10 @@ const onThreshold = 90;
 const updateSpeed = 10000; // every 10s
 
 const ControlScreen = () => {
-  const {target, setTarget} = useTarget(); // target shared across screens
+  const { target, setTarget } = useTarget(); // target shared across screens
 
-  const [isOn, setIsOn] = useState(false); // default to off
+  const [isCooling, setIsCooling] = useState(false); // backend truth
+  const [isDesiredOn, setIsDesiredOn] = useState(false); // default to off
   const [systemTarget, setSystemTarget] = useState(null);
   const [liveReading, setLiveReading] = useState(null);
   const [lastUpdateTime, setLastUpdateTime] = useState("");
@@ -63,7 +64,7 @@ const ControlScreen = () => {
 
         // infer system state if latest update was less than the threshold
         const timeSince = getTimeSince(timestamp);
-        setIsOn(timeSince <= onThreshold && state === "Cooling");
+        setIsCooling(timeSince <= onThreshold && state === "Cooling");
 
         setLastUpdateTime(getTimeSinceString(timestamp));
       };
@@ -77,17 +78,23 @@ const ControlScreen = () => {
         clearInterval(intervalId);
         isActive = false;
       };
-    }, [initialized])
+    }, [initialized]),
   );
 
   // send command ONLY when user changes target
   useEffect(() => {
-    if (!isOn) return;
+    if (!isDesiredOn) return;
     if (!initialized) return;
     if (target === systemTarget) return;
 
-    sendCommand(target, isOn);
-  }, [target, systemTarget, initialized]);
+    sendCommand(target, true);
+  }, [target, systemTarget, initialized, isDesiredOn]);
+
+  const onTogglePower = () => {
+    const next = !isDesiredOn;
+    setIsDesiredOn(next);
+    sendCommand(systemTarget, next);
+  };
 
   return (
     <SafeAreaView
@@ -95,7 +102,7 @@ const ControlScreen = () => {
         styles.container,
         {
           // toggle background colour by system status
-          backgroundColor: isOn
+          backgroundColor: isDesiredOn
             ? colours.backgroundPrimary
             : colours.backgroundOff,
         },
@@ -129,7 +136,8 @@ const ControlScreen = () => {
         </View>
 
         <SliderControl
-          isOn={isOn}
+          isDesiredOn={isDesiredOn}
+          isCooling={isCooling}
           temp={target}
           liveReading={liveReading}
           setTemp={setTarget}
@@ -150,17 +158,17 @@ const ControlScreen = () => {
                 styles.powerButtonContainer,
                 styles.shadowOutline,
                 {
-                  borderColor: isOn
+                  borderColor: isDesiredOn
                     ? colours.buttonPrimary
                     : colours.buttonDisabled,
                 },
                 pressed && { opacity: 0.7 },
               ]}
-              onPress={() => setIsOn((prev) => !prev)} // toggle
+              onPress={onTogglePower} // toggle
             >
               {/* Make the power button toggle in text and colour */}
               <View style={styles.powerButton}>
-                {!isOn ? (
+                {!isDesiredOn ? (
                   <>
                     {icons.power()}
                     <Text style={typography.boldBody}>Start Cooling</Text>
@@ -178,11 +186,11 @@ const ControlScreen = () => {
               style={[
                 styles.commandWindow,
                 styles.shadowOutline,
-                !isOn && { opacity: 0.6 },
+                !isDesiredOn && { opacity: 0.6 },
               ]}
             >
               <Text style={typography.boldBody}>Command Window</Text>
-              {isOn ? (
+              {isDesiredOn ? (
                 <Text style={typography.body}>
                   Cooling unit to {target.toFixed(1)}°C...
                 </Text>
