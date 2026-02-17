@@ -6,21 +6,22 @@ export async function getStatus() {
   return await apiRunner(url);
 }
 
-export async function sendCommand(value, isOn) {
-  console.log("System is Cooling: " + isOn);
+export async function sendCommand(target, powerOn) {
+  const body = powerOn
+    ? {
+        deviceId,
+        command: "SET_TARGET_TEMP",
+        value: target,
+      }
+    : {
+        deviceId,
+        command: "STOP_COOLING",
+      };
 
-  const url = cloud_url + "/command";
-
-  return await apiRunner(url, {
+  return await apiRunner(cloud_url + "/command", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      deviceId: deviceId,
-      command: "SET_TARGET_TEMP",
-      value: value,
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 }
 
@@ -34,7 +35,14 @@ async function apiRunner(url, options = {}) {
     const response = await fetch(url, options);
     // check if the request was successful
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      let errorBody;
+      try {
+        errorBody = await response.text();
+      } catch {
+        errorBody = "<no body>";
+      }
+
+      throw new Error(`HTTP ${response.status}: ${errorBody}`);
     }
 
     if (response.status === 204) {
