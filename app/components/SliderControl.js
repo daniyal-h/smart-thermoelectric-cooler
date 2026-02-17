@@ -34,7 +34,7 @@ const SliderControl = ({
   };
 
   const handleAutoSet = () => {
-    setTemp(4); // ideal fridge temp
+    setTemp(5.5); // ideal fridge temp
   };
 
   // const uiCoolingState = isDesiredOn ? "Starting" : isCooling ? "Cooling" : "System Off";
