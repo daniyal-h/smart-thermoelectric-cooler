@@ -90,11 +90,20 @@ const ControlScreen = () => {
     sendCommand(target, true);
   }, [target, systemTarget, initialized, isDesiredOn]);
 
+  // for toggling cooling
   const onTogglePower = () => {
     const next = !isDesiredOn;
     setIsDesiredOn(next);
     sendCommand(systemTarget, next);
   };
+
+  let uiCoolingState;
+
+  if (isDesiredOn) {
+    uiCoolingState = isCooling ? "Cooling unit to " : "Starting to cool to ";
+  } else {
+    uiCoolingState = isCooling ? "Stopping unit..." : "Unit is off...";
+  }
 
   return (
     <SafeAreaView
@@ -192,10 +201,10 @@ const ControlScreen = () => {
               <Text style={typography.boldBody}>Command Window</Text>
               {isDesiredOn ? (
                 <Text style={typography.body}>
-                  Cooling unit to {target.toFixed(1)}°C...
+                  {uiCoolingState}{target.toFixed(1)}°C...
                 </Text>
               ) : (
-                <Text style={typography.boldBody}>System is off...</Text>
+                <Text style={typography.boldBody}>{uiCoolingState}</Text>
               )}
             </View>
           </View>
