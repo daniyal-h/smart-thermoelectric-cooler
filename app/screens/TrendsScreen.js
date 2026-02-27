@@ -20,7 +20,6 @@ const TrendsScreen = () => {
   const { target } = useTarget();
   const [temperatures, setTemperatures] = useState(null);
   const [timestamps, setTimestamps] = useState(null);
-  const [states, setStates] = useState(null);
   const [startTime, setStartTime] = useState(null);
 
   useFocusEffect(
@@ -40,23 +39,11 @@ const TrendsScreen = () => {
         }
 
         // store history
-        const [ts, temps, firmwareStates] = getTelemetries(data); // destructure tuple
+        const [ts, temps] = getTelemetries(data); // destructure tuple
         setTemperatures(temps);
         setTimestamps(ts);
-        setStates(firmwareStates);
 
-        let firstCoolingIdx = -1;
-
-        firmwareStates.forEach((fState, index) => {
-          if (fState === "Cooling") {
-            firstCoolingIdx = index;
-          }
-        })
-
-        console.log("First Cooling: " + firstCoolingIdx);
-
-        
-        setStartTime(getStartingTime(ts[0])); // start at oldest
+        setStartTime(getStartingTime(ts[0]));
       };
 
       // fetch on focus then periodically

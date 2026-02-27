@@ -22,7 +22,7 @@ import SliderControl from "../components/SliderControl";
 import { useTarget } from "../context/TargetContext";
 
 const { width, height } = Dimensions.get("window");
-const onThreshold = 60; // 1 minute max
+const onThreshold = 90; // 1 minute max
 const updateSpeed = 10000; // every 10s
 
 const ControlScreen = () => {
