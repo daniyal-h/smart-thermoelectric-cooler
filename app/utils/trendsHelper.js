@@ -2,12 +2,14 @@ export const getTelemetries = (telemetries) => {
   // return an two arrays of timestamps and their temperatures
   const timestamps = [];
   const temperatures = [];
+  const states = [];
   telemetries.forEach((telemetry) => {
     temperatures.push(parseFloat(telemetry["currentTemp"]));
     timestamps.push(telemetry["timestamp"]);
+    states.push(telemetry["state"]);
   });
 
-  return [timestamps, temperatures];
+  return [timestamps, temperatures, states];
 };
 
 export const getStartingTime = (timestamp) => {

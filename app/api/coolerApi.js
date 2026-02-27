@@ -50,7 +50,7 @@ async function apiRunner(url, options = {}) {
     }
 
     const data = await response.json(); // Parse the response body as JSON
-    //console.log(data);
+    // console.log(data);
     return data;
   } catch (error) {
     console.log("Error during fetch:", error);
