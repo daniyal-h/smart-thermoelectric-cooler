@@ -98,6 +98,7 @@ void peltiersOn() {
     // digitalWrite(PELTIER4_PIN, HIGH);
     digitalWrite(MOSFET_PELTIER_PIN, HIGH);
     digitalWrite(COOLING_ON_LED_PIN, HIGH);
+    digitalWrite(STEADY_STATE_LED_PIN, LOW);
 }
 
 void peltiersOff() {
@@ -105,7 +106,7 @@ void peltiersOff() {
     // digitalWrite(PELTIER2_PIN, LOW);
     // digitalWrite(PELTIER3_PIN, LOW);
     // digitalWrite(PELTIER4_PIN, LOW);
-    digitalWrite(COOLING_ON_LED_PIN, LOW);
+    digitalWrite(MOSFET_PELTIER_PIN, LOW);
     digitalWrite(COOLING_ON_LED_PIN, LOW);
 }
 
@@ -368,7 +369,7 @@ void runStateMachine() {
         if (thermalState.currentTempC > thermalState.targetTempC) { // if current temp is greater than target
             peltiersOn();
             // fansOn();
-            setMotorSpeed(200);   // adjust speed as needed
+            setMotorSpeed(113);   // adjust speed as needed
             Serial.println("Cooling... Current Temp: " + String(thermalState.currentTempC) + " °C, Target Temp: " + String(thermalState.targetTempC) + " °C");
         } else { // if current temp is less than or equal to target
             peltiersOff();
