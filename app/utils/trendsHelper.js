@@ -27,49 +27,31 @@ export const getStartingTime = (timestamp) => {
   return time.toLowerCase(); // i.g. 6:02 pm
 };
 
-export const getLabels = (count) => {
-  if (!count || count <= 0) return [];
-
-  const labels = [];
-  const sampleIntervalMin = 0.5; // 30s per point
-
-  let labelStepPoints;
-
-  if (count <= 10) {
-    labelStepPoints = 1; // every 0.5 min
-  } else if (count <= 20) {
-    labelStepPoints = 2; // every 1 min
-  } else {
-    labelStepPoints = 4; // every 2 min
-  }
-
-  for (let i = 0; i < count; i += labelStepPoints) {
-    const minutes = i * sampleIntervalMin;
-    labels.push(`${minutes}m`);
-  }
-
-  return labels;
-};
-
 export const getTemperatures = (temperatures) => {
   if (!temperatures || temperatures.length === 0) return [];
 
-  let step;
   const count = temperatures.length;
-
-  if (count <= 10) {
-    step = 1; // every 30s
-  } else if (count <= 20) {
-    step = 2; // every 1 min
-  } else {
-    step = 4; // every 2 min
-  }
+  const targetPoints = 10; // keep chart readable
+  const step = Math.max(1, Math.ceil(count / targetPoints));
 
   const sampled = [];
   for (let i = 0; i < count; i += step) {
     sampled.push(temperatures[i]);
   }
-
-  console.log(sampled);
   return sampled;
+};
+
+export const getLabels = (count) => {
+  if (!count || count <= 0) return [];
+
+  const sampleIntervalMin = 0.5;
+  const targetPoints = 10;
+  const step = Math.max(1, Math.ceil(count / targetPoints));
+
+  const labels = [];
+  for (let i = 0; i < count; i += step) {
+    const minutes = i * sampleIntervalMin;
+    labels.push(`${minutes}m`);
+  }
+  return labels;
 };
