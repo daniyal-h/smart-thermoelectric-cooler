@@ -133,7 +133,7 @@ const ControlScreen = () => {
           </View>
         ) : (
           <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
-            Error connecting to Database
+            No data found
           </Text>
         )}
       </View>
