@@ -23,14 +23,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 
 /* ---------------- PINS AND PWM  - PASCHAL ---------------- */
-const int ON_OFF_LED_PIN = 32;
-const int COOLING_ON_LED_PIN = 5;
-const int STEADY_STATE_LED_PIN = 33;
-const int MOSFET_MOTOR_PIN = 4;
-const int MOSFET_PELTIER_PIN = 23;  // MOSFET pin for Peltier control
+const int ON_OFF_LED_PIN = 5;
+const int COOLING_ON_LED_PIN = 6;
+const int STEADY_STATE_LED_PIN = 7;
+const int MOSFET_MOTOR_PIN = 20;
+const int MOSFET_PELTIER_PIN = 21;  // MOSFET pin for Peltier control
 const int TEMP_SENSOR_PIN = 14;      // DS18B20 temperature sensor data pin
-const int DISPLAY_SCL = 22;
-const int DISPLAY_SDA = 21;
+const int DISPLAY_SCL = 9;
+const int DISPLAY_SDA = 8;
 
 
 
@@ -170,7 +170,7 @@ bool wifiConnected() {
 }
 
 void connectToWifi() {
-    // Serial.println("Starting WiFi connection...");
+    Serial.println("Starting WiFi connection...");
     // static bool wifiStarted = false;
 
     WiFi.disconnect(true, true); // Clear old credentials
@@ -184,19 +184,6 @@ void connectToWifi() {
     }
     Serial.println("Connected!");
     Serial.println(WiFi.localIP());
-
-    // if (!wifiStarted) {
-    //     WiFi.disconnect(true, true); // Clear old credentials
-    //     delay(1000);
-    //     WiFi.mode(WIFI_STA);
-    //     WiFi.setSleep(false);
-    //     WiFi.begin(WIFI_SSID, WIFI_PASS);
-    //     wifiStarted = true;
-    // }
-
-    // if (WiFi.status() == WL_CONNECTED) {
-    //     Serial.println("wifi connected");
-    // }
 }
 
 void scanOnce() {
@@ -204,8 +191,8 @@ void scanOnce() {
     int n = WiFi.scanNetworks();
     Serial.printf("found %d networks\n", n);
     for (int i = 0; i < n; i++) {
-        Serial.printf("%2d) %s  RSSI=%d  enc=%d\n", i+1,
-                    WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
+      Serial.printf("%2d) %s  RSSI=%d  enc=%d\n", i+1,
+        WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
     }
 }
 
@@ -225,10 +212,10 @@ const char* systemStateToString(SystemState state) {
 }
 
 void setSystemState(SystemState newState) {
-    if (currentState != newState) {
-        Serial.println("System state changed from " + String(systemStateToString(currentState)) + " to " + String(systemStateToString(newState)));
-        currentState = newState;
-    }
+  if (currentState != newState) {
+      Serial.println("System state changed from " + String(systemStateToString(currentState)) + " to " + String(systemStateToString(newState)));
+      currentState = newState;
+  }
 }
 
 
@@ -315,13 +302,6 @@ void runStateMachine() {
     /* ---------------- BOOTING ---------------- */
     case SystemState::Booting: // - Paschal
         // --- Configure GPIO modes ---
-        // pinMode(PELTIER1_PIN, OUTPUT);
-        // pinMode(PELTIER2_PIN, OUTPUT);
-        // pinMode(PELTIER3_PIN, OUTPUT);
-        // pinMode(PELTIER4_PIN, OUTPUT);
-        // pinMode(FAN1_PIN, OUTPUT);
-        // pinMode(FAN2_PIN, OUTPUT);
-
         pinMode(ON_OFF_LED_PIN, OUTPUT);
         pinMode(COOLING_ON_LED_PIN, OUTPUT);
         pinMode(STEADY_STATE_LED_PIN, OUTPUT);
@@ -340,7 +320,6 @@ void runStateMachine() {
 
         // --- Ensure everything OFF ---
         peltiersOff();
-        // fansOff();
         motorOff();
 
         tempSensor.begin(); // initialize temperature sensor
@@ -351,14 +330,12 @@ void runStateMachine() {
         scanOnce(); // scan for wifi networks
         connectToWifi(); // connect to wifi
 
-        // delay(5000); // wait for connection attempt
         setSystemState(SystemState::Idle); // set system state to Idle
         break;
 
     /* ---------------- IDLE ---------------- */
     case SystemState::Idle:
         peltiersOff();
-        // fansOff();
         motorOff();
         break;
 
@@ -368,12 +345,10 @@ void runStateMachine() {
 
         if (thermalState.currentTempC > thermalState.targetTempC) { // if current temp is greater than target
             peltiersOn();
-            // fansOn();
             setMotorSpeed(113);   // adjust speed as needed
             Serial.println("Cooling... Current Temp: " + String(thermalState.currentTempC) + " °C, Target Temp: " + String(thermalState.targetTempC) + " °C");
         } else { // if current temp is less than or equal to target
             peltiersOff();
-            // fansOff();
             motorOff();
             digitalWrite(STEADY_STATE_LED_PIN, HIGH); // turn on steady state LED
             Serial.println("Target temperature reached. Current Temp: " + String(thermalState.currentTempC) + " °C");
@@ -384,7 +359,6 @@ void runStateMachine() {
     /* ---------------- ERROR ---------------- */
     case SystemState::Error:
         peltiersOff();
-        // fansOff();
         motorOff();
         break;
     }
@@ -397,32 +371,10 @@ void setup() { // called once at startup
     Serial.begin(115200); // initialize serial interface for debugging
     currentState = SystemState::Booting; // set initial system state to Booting
     Serial.println("System Booting...");
-
-
 }
 
-// void setup() { // called once at startup
-//     Serial.begin(115200); // initialize serial interface for debugging
-//     Serial.println("=== SETUP START ===");
-//     currentState = SystemState::Booting; // start in BOOT state
-
-//     // pinMode(TEMP_SENSOR_PIN, INPUT);
-
-//     pinMode(ON_OFF_LED_PIN, OUTPUT);
-//     pinMode(COOLING_ON_LED_PIN, OUTPUT);
-//     pinMode(STEADY_STATE_LED_PIN, OUTPUT);
-//     pinMode(MOSFET_MOTOR_PIN, OUTPUT);
-//     pinMode(MOSFET_PELTIER_PIN, OUTPUT);
-
-//     digitalWrite(ON_OFF_LED_PIN, HIGH);
-//     digitalWrite(COOLING_ON_LED_PIN, LOW);
-//     digitalWrite(STEADY_STATE_LED_PIN, LOW);
-//     digitalWrite(MOSFET_MOTOR_PIN, LOW);
-//     digitalWrite(MOSFET_PELTIER_PIN, LOW);
-//     tempSensor.begin(); // initialize temperature sensor
-// }
-
 void loop() { // called repeatedly
+    displayTemperature(thermalState);
     unsigned long now = millis(); // get current time in milliseconds
 
     if (now - lastTelemMs >= 30000) { // send telemetry every 30 seconds
@@ -435,28 +387,6 @@ void loop() { // called repeatedly
         lastCmdPollMs = now; // update last command poll timestamp
         pollCloudForCommand(); // poll cloud for command
     }
-
-    // // Case 1: Wi-Fi is connected now
-    // if (wifiConnected()) {
-    //     if (!wifiEverConnected) { // first successful connection
-    //         wifiEverConnected = true;
-    //         Serial.println("WiFi connected for the first time");
-    //     } else if (lastWifiRetryMs > 0) { // reconnected after a disconnect
-    //         Serial.println("WiFi reconnected successfully");
-    //     }
-    //     lastWifiRetryMs = now; // update last check time
-    // }
-
-    // // Case 2: Wi-Fi not connected, retry if needed
-    // if (!wifiConnected() && now - lastWifiRetryMs >= 60000) { // retry every 60 s
-    //     if (wifiEverConnected) {
-    //         Serial.println("WiFi disconnected, attempting to reconnect...");
-    //     } else {
-    //         Serial.println("WiFi not connected yet, attempting first connection...");
-    //     }
-    //     lastWifiRetryMs = now;
-    //     connectToWifi();
-    // }
 
     runStateMachine(); // Run state machine
 }
