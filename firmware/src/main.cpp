@@ -32,19 +32,6 @@ const int TEMP_SENSOR_PIN = 14;      // DS18B20 temperature sensor data pin
 const int DISPLAY_SCL = 9;
 const int DISPLAY_SDA = 8;
 
-
-
-// const int PELTIER1_PIN = 26;
-// const int PELTIER2_PIN = 27;
-// const int PELTIER3_PIN = 25;
-// const int PELTIER4_PIN = 33;
-
-// const int FAN1_PIN = 32;
-// const int FAN2_PIN = 14;
-
-// const int MOSFET_MOTOR_PIN = 13;   // Motor pin driven by MOSFET and PWM
-// const int TEMP_SENSOR_PIN = 4; // DS18B20 temperature sensor pin
-
 const int PWM_CHANNEL = 0;   // PWM channel in LEDC (PWM controller)
 const int PWM_FREQ = 2000;   // PWM frequency in Hz
 const int PWM_RES_BITS = 8;  // 2^8 = 256 PWM levels
@@ -92,33 +79,15 @@ ThermalState thermalState; // current thermal state
    PERIPHERAL CONTROL - PASCHAL
    ========================================================= */
 void peltiersOn() {
-    // digitalWrite(PELTIER1_PIN, HIGH);
-    // digitalWrite(PELTIER2_PIN, HIGH);
-    // digitalWrite(PELTIER3_PIN, HIGH);
-    // digitalWrite(PELTIER4_PIN, HIGH);
     digitalWrite(MOSFET_PELTIER_PIN, HIGH);
     digitalWrite(COOLING_ON_LED_PIN, HIGH);
     digitalWrite(STEADY_STATE_LED_PIN, LOW);
 }
 
 void peltiersOff() {
-    // digitalWrite(PELTIER1_PIN, LOW);
-    // digitalWrite(PELTIER2_PIN, LOW);
-    // digitalWrite(PELTIER3_PIN, LOW);
-    // digitalWrite(PELTIER4_PIN, LOW);
     digitalWrite(MOSFET_PELTIER_PIN, LOW);
     digitalWrite(COOLING_ON_LED_PIN, LOW);
 }
-
-// void fansOn() {
-//     digitalWrite(FAN1_PIN, HIGH);
-//     digitalWrite(FAN2_PIN, HIGH);
-// }
-
-// void fansOff() {
-//     digitalWrite(FAN1_PIN, LOW);
-//     digitalWrite(FAN2_PIN, LOW);
-// }
 
 void setMotorSpeed(uint8_t duty) {
     ledcWrite(PWM_CHANNEL, duty);   // 0–255
@@ -345,7 +314,7 @@ void runStateMachine() {
 
         if (thermalState.currentTempC > thermalState.targetTempC) { // if current temp is greater than target
             peltiersOn();
-            setMotorSpeed(113);   // adjust speed as needed
+            setMotorSpeed(225);   // adjust speed as needed
             Serial.println("Cooling... Current Temp: " + String(thermalState.currentTempC) + " °C, Target Temp: " + String(thermalState.targetTempC) + " °C");
         } else { // if current temp is less than or equal to target
             peltiersOff();
