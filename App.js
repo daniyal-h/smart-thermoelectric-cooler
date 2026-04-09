@@ -19,6 +19,7 @@ import TrendsScreen from "./app/screens/TrendsScreen";
 
 import icons from "./app/constants/icons";
 import { colours } from "./app/constants/colours";
+import { TargetProvider } from "./app/context/TargetContext";
 
 const Tab = createBottomTabNavigator();
 const ICON_SIZE = 24;
@@ -42,48 +43,51 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: colours.tabBarActiveTintColor,
-          tabBarInactiveTintColor: colours.tabBarInactiveTintColor,
-          tabBarActiveBackgroundColor: colours.tabBarActiveBackgroundColor,
-          tabBarInactiveBackgroundColor: colours.tabBarInactiveBackgroundColor,
-          tabBarItemStyle: {
-            flex: 1,
-            borderRadius: 12,
-            overflow: "hidden",
-            marginHorizontal: 6,
-            marginTop: 6,
-          },
-          tabBarStyle: {
-            backgroundColor: colours.backgroundSecondary,
-            height: RFPercentage(10),
-            borderTopWidth: 0,
-          },
+    <TargetProvider>
+      <NavigationContainer>
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: colours.tabBarActiveTintColor,
+            tabBarInactiveTintColor: colours.tabBarInactiveTintColor,
+            tabBarActiveBackgroundColor: colours.tabBarActiveBackgroundColor,
+            tabBarInactiveBackgroundColor:
+              colours.tabBarInactiveBackgroundColor,
+            tabBarItemStyle: {
+              flex: 1,
+              borderRadius: 12,
+              overflow: "hidden",
+              marginHorizontal: 6,
+              marginTop: 6,
+            },
+            tabBarStyle: {
+              backgroundColor: colours.backgroundSecondary,
+              height: RFPercentage(10),
+              borderTopWidth: 0,
+            },
 
-          tabBarLabelStyle: {
-            fontFamily: "Inter_600SemiBold",
-            fontSize: RFPercentage(1.75),
-          },
-        }}
-      >
-        <Tab.Screen
-          name="Control"
-          component={ControlScreen}
-          options={{
-            tabBarIcon: ({ color }) => icons.control(color, ICON_SIZE),
+            tabBarLabelStyle: {
+              fontFamily: "Inter_600SemiBold",
+              fontSize: RFPercentage(1.75),
+            },
           }}
-        />
-        <Tab.Screen
-          name="Trends"
-          component={TrendsScreen}
-          options={{
-            tabBarIcon: ({ color }) => icons.trends(color, ICON_SIZE),
-          }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
+        >
+          <Tab.Screen
+            name="Control"
+            component={ControlScreen}
+            options={{
+              tabBarIcon: ({ color }) => icons.control(color, ICON_SIZE),
+            }}
+          />
+          <Tab.Screen
+            name="Trends"
+            component={TrendsScreen}
+            options={{
+              tabBarIcon: ({ color }) => icons.trends(color, ICON_SIZE),
+            }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </TargetProvider>
   );
 }
