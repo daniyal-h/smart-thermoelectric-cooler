@@ -17,17 +17,26 @@ The system continuously measures temperature through a digital sensor in the coo
 
 ## Milestones
 
-**Milestone 1 - App UI and Core Features**  
+**Milestone 1 - App UI and Core Features (completed)**  
 Develop a fully functional mobile interface that simulates all controls and data visualization without hardware integration.  
 - Interactive slider and temperature display.
 - Mock backend for testing UI responsiveness.
 - Navigation between control and monitoring screens.
 
-**Milestone 2 - Hardware Integration and System Control**  
-Connect the app to the actual thermoelectric system for full operation.  
-- Real-time data exchange with ESP32.
-- PWM control of TEC based on user input.
+
+**Milestone 2 - Cloud Integration and Mock Testing (completed)**  
+Connect the app to the cloud-mediated architecture.  
+- Real-time data exchange with the cloud.
 - Temperature sensor feedback and live graph updates.
+- Validate overall communication with AWS.
+- Mock device-side communication with Postman.
+
+
+**Milestone 3 - Hardware Integration and System Control**  
+Connect the app to the actual thermoelectric system for full operation.  
+- Validate real-time data exchange with ESP32.
+- Validate command sending and receiving with ESP32.
+- Validate temperature sensor feedback and live graph updates.
 
 ---
 
@@ -36,6 +45,7 @@ Connect the app to the actual thermoelectric system for full operation.
 - **Mobile App:** React Native (Expo)  
 - **Microcontroller:** ESP32 (C/C++)  
 - **Communication:** REST API (Wi-Fi)  
+- **Backend:** Cloud-mediate architecture (AWS: API Gateway, Lambda, DynamoDB).
 - **Cooling Hardware:** Thermoelectric (Peltier) modules  
 - **Sensor:** Digital temperature sensor
 
