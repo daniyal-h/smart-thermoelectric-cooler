@@ -1,54 +1,49 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <HTTPClient.h>
+#include <password.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 /* =========================================================
    CONFIG CONSTANTS
    ========================================================= */
-/* ---------------- WIFI ---------------- */
-const char* WIFI_SSID = "YOUR_WIFI";
-const char* WIFI_PASS = "YOUR_PASS";
+/* ---------------- OLED ---------------- */
+#define SCREEN_WIDTH 128    // OLED display width, in pixels
+#define SCREEN_HEIGHT 32    // OLED display height, in pixels
 
-/* ---------------- GPIO ---------------- */
-const int MOSFET_PELTIER_PIN = 26;  // MOSFET pin for Peltier control
-const int TEMP_SENSOR_PIN = 4;      // DS18B20 temperature sensor data pin
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET    -1    // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-/* ---------------- PWM ---------------- */
+
+/* ---------------- PINS AND PWM  - PASCHAL ---------------- */
+const int ON_OFF_LED_PIN = 5;
+const int COOLING_ON_LED_PIN = 6;
+const int STEADY_STATE_LED_PIN = 7;
+const int MOSFET_MOTOR_PIN = 20;
+const int MOSFET_PELTIER_PIN = 21;  // MOSFET pin for Peltier control
+const int TEMP_SENSOR_PIN = 14;      // DS18B20 temperature sensor data pin
+const int DISPLAY_SCL = 9;
+const int DISPLAY_SDA = 8;
+
 const int PWM_CHANNEL = 0;   // PWM channel in LEDC (PWM controller)
 const int PWM_FREQ = 2000;   // PWM frequency in Hz
 const int PWM_RES_BITS = 8;  // 2^8 = 256 PWM levels
 
-/* =========================================================
-   GLOBAL VARIABLES & OBJECTS
-   ========================================================= */
-/* ---------------- GLOBAL VARIABLES ---------------- */
-unsigned long coolingStartTimeMs = 0; // NEW
-float coolingStartTempC = 0.0f; // NEW
-String lastCommand; // NEW
-int tempHistIndex = 0; // NEW
-
-/* ---------------- GLOBAL OBJECTS ---------------- */
-WebServer server(80); // create HTTP server on port 80
-JsonDocument jsonReqObj; // JSON request object
-OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
-DallasTemperature tempSensor(&oneWire); // object for requesting temperatures on OneWire bus
-SystemState systemState; // current system state
-ThermalState thermalState; // current thermal state
-TempSample tempHistory[600]; // NEW
 
 /* =========================================================
-   STATE
+    ENUMS & STRUCTS
    ========================================================= */
 /* ---------------- SYSTEM STATE ---------------- */
 enum class SystemState {
     Booting,
-    StartingServer,
-    ReadyForClientReq,
-    ServingApiCommand,
-    ServingApiStatus,
+    Idle,
     Cooling,
     Error
 };
@@ -59,176 +54,281 @@ struct ThermalState {
     float targetTempC;
 };
 
-/* ---------------- HISTORY & METADATA ---------------- */   // NEW
 
-struct TempSample {
-    unsigned long tMs;
-    float tempC;
-};
+/* =========================================================
+   GLOBAL VARIABLES & OBJECTS
+   ========================================================= */
+/* ---------------- GLOBAL VARIABLES ---------------- */
+unsigned long coolingStartTimeMs = 0; // time at start of cooling
+float coolingStartTempC = 0.0f; // temp at start of cooling
+unsigned long lastCmdPollMs = 0; // last time command was polled
+unsigned long lastTelemMs = 0;   // last time telemetry history was sent
+unsigned long lastWifiRetryMs = 0; // last time wifi reconnect was attempted
+bool wifiEverConnected = false; // flag to track if wifi was ever connected
+unsigned long wifiAttemptStartMs = 0; // last time wifi connection attempt was started
+const unsigned long WIFI_TIMEOUT_MS = 5000; // 5 seconds
+
+/* ---------------- GLOBAL OBJECTS ---------------- */
+OneWire oneWire(TEMP_SENSOR_PIN); // OneWire bus for temperature sensor pin
+DallasTemperature tempSensor(&oneWire); // object for requesting temperatures on OneWire bus
+SystemState currentState; // current system state
+ThermalState thermalState; // current thermal state
+
+
+/* =========================================================
+   PERIPHERAL CONTROL - PASCHAL
+   ========================================================= */
+void peltiersOn() {
+    digitalWrite(MOSFET_PELTIER_PIN, HIGH);
+    digitalWrite(COOLING_ON_LED_PIN, HIGH);
+    digitalWrite(STEADY_STATE_LED_PIN, LOW);
+}
+
+void peltiersOff() {
+    digitalWrite(MOSFET_PELTIER_PIN, LOW);
+    digitalWrite(COOLING_ON_LED_PIN, LOW);
+}
+
+void setMotorSpeed(uint8_t duty) {
+    ledcWrite(PWM_CHANNEL, duty);   // 0–255
+}
+
+void motorOff() {
+    ledcWrite(PWM_CHANNEL, 0);
+}
+
+void readTemperature() {
+    tempSensor.requestTemperatures(); // request temperatures from available sensors
+    float temp = tempSensor.getTempCByIndex(0);  // get measured temperature from sensor 0
+    if(temp == DEVICE_DISCONNECTED_C) {
+        Serial.println("Temperature sensor error!");
+    } else {
+        thermalState.currentTempC = temp;
+    }
+}
+
+void displayTemperature(ThermalState thermalState){
+    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+        Serial.println(F("SSD1306 allocation failed"));
+        for(;;);
+    }
+    delay(2000);
+    display.clearDisplay();
+
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 10);
+    // Display static text
+    display.print("Target Temp: ");
+    display.print(thermalState.targetTempC, 2); // The '2' sets decimal places
+    display.println(" C");
+
+    display.print("Curr Temp: ");
+    display.print(thermalState.currentTempC, 2); // The '2' sets decimal places
+    display.println(" C");
+
+    display.display();
+}
 
 
 /* =========================================================
    HELPER FUNCTIONS
    ========================================================= */
-void setPeltierPower(uint8_t dutyCycle) {
-    ledcWrite(PWM_CHANNEL, dutyCycle); // write PWM at dutyCycle to pin
-}
-
-void startCooling() {
-    setPeltierPower(180);   // 180/255 ~ 70% power (tune later)
-}
-
-void stopCooling() {
-    setPeltierPower(0);     // 0% power
+bool wifiConnected() {
+    return WiFi.status() == WL_CONNECTED;
 }
 
 void connectToWifi() {
-    WiFi.begin(WIFI_SSID, WIFI_PASS); // connect to wifi using credentials
+    Serial.println("Starting WiFi connection...");
+    // static bool wifiStarted = false;
+
+    WiFi.disconnect(true, true); // Clear old credentials
+    delay(1000);
+    Serial.println("Starting connection...");
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("Connected!");
+    Serial.println(WiFi.localIP());
 }
 
-bool wifiConnected() {
-    return WiFi.status() == WL_CONNECTED; // return true if wifi is connected
+void scanOnce() {
+    WiFi.mode(WIFI_STA);
+    int n = WiFi.scanNetworks();
+    Serial.printf("found %d networks\n", n);
+    for (int i = 0; i < n; i++) {
+      Serial.printf("%2d) %s  RSSI=%d  enc=%d\n", i+1,
+        WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
+    }
 }
 
-void readTemperature() {
-    tempSensor.requestTemperatures(); // request temperatures from available sensors
-    thermalState.currentTempC = tempSensor.getTempCByIndex(0);  // get measured temperature from sensor 0
+const char* systemStateToString(SystemState state) {
+    switch (state) {
+        case SystemState::Booting:
+            return "Booting";
+        case SystemState::Idle:
+            return "Idle";
+        case SystemState::Cooling:
+            return "Cooling";
+        case SystemState::Error:
+            return "Error";
+        default:
+            return "Unknown";
+    }
 }
 
-void apiCommandHandler() {
-    deserializeJson(jsonReqObj, server.arg("plain")); // deserialize JSON string to JSON object
-    systemState = SystemState::ServingApiCommand; // set state to ServingApiCommand
+void setSystemState(SystemState newState) {
+  if (currentState != newState) {
+      Serial.println("System state changed from " + String(systemStateToString(currentState)) + " to " + String(systemStateToString(newState)));
+      currentState = newState;
+  }
 }
 
-void apiStatusHandler() {
-    systemState = SystemState::ServingApiStatus; // set state to ServingApiStatus
+
+/* =========================================================
+   CLOUD COMMUNICATION
+   ========================================================= */
+void sendTelemetryToCloud() {
+    if (!wifiConnected()) return; // return if wifi is not connected
+
+    HTTPClient cloudHttpClient; // create cloud HTTP client object
+    cloudHttpClient.begin("https://d5uo13qpfc.execute-api.us-east-1.amazonaws.com/telemetry"); // begin connection to /telemetry endpoint
+    cloudHttpClient.addHeader("Content-Type", "application/json"); // set content type to JSON
+
+    StaticJsonDocument<256> jsonDoc; // create JSON document
+    jsonDoc["deviceId"] = "cooler-01"; // set device ID
+    jsonDoc["systemState"] = systemStateToString(currentState); // set system state
+    jsonDoc["currentTemp"] = thermalState.currentTempC; // set current temperature
+    jsonDoc["targetTemp"] = thermalState.targetTempC; // set target temperature
+    jsonDoc["uptimeMs"] = millis(); // set uptime in milliseconds
+
+    String payload; // create payload string
+    serializeJson(jsonDoc, payload); // serialize JSON document to payload string
+
+    cloudHttpClient.POST(payload); // send POST request with payload to cloud
+    Serial.println("Sent telemetry to cloud: " + payload);
+    cloudHttpClient.end(); // close HTTP client
 }
 
-void apiHistoryHandler() { // NEW
-    JsonDocument jsonRespObj;
-    JsonArray arr = jsonRespObj["samples"].to<JsonArray>();
+void pollCloudForCommand() { // new
+    if (!wifiConnected()) return; // return if wifi is not connected
 
-    for (int i = 0; i < 600; i++) {
-        JsonObject o = arr.add<JsonObject>();
-        o["t"] = tempHistory[i].tMs;
-        o["temp"] = tempHistory[i].tempC;
+    HTTPClient cloudHttpClient; // create cloud HTTP client object
+    cloudHttpClient.begin("https://d5uo13qpfc.execute-api.us-east-1.amazonaws.com/command?deviceId=cooler-01"); // begin connection to /command endpoint
+    int httpCode = cloudHttpClient.GET(); // send GET request to cloud
+
+    if (httpCode == 200) { // if HTTP response code is 200 (OK)
+        String payload = cloudHttpClient.getString(); // get response payload
+        StaticJsonDocument<256> jsonDoc; // create JSON document
+        DeserializationError err = deserializeJson(jsonDoc, payload); // deserialize payload string to JSON document
+
+        if (err) { // if deserialization fails
+            Serial.println("JSON deserialization error: " + String(err.c_str())); // print deserialization error message
+            cloudHttpClient.end(); // close HTTP client
+            return;
+        }
+
+        String cmd = jsonDoc["command"]; // get command from JSON document
+        Serial.println("Received command: " + cmd); // print command message
+        if (cmd == "SET_TARGET_TEMP") { // if command is SET_TARGET_TEMP
+            float target = jsonDoc["value"]; // get target temperature value
+            if (target < 0){
+                Serial.println("Invalid target temperature, must be greater than 0 °C"); // print error message
+                cloudHttpClient.end(); // close HTTP client
+                return;
+            }
+            thermalState.targetTempC = target;  // update target temperature
+
+            if (currentState != SystemState::Cooling) { // if system state is not Cooling
+                setSystemState(SystemState::Cooling); // set system state to Cooling
+            }
+
+        } else if (cmd == "STOP_COOLING") { // if command is STOP_COOLING
+            setSystemState(SystemState::Idle); // set system state to Idle
+        }
+
+        else {
+            Serial.println("Unknown command received: " + cmd); // print unknown command message
+        }
+    }
+    else {
+        Serial.println("HTTP GET failed, code: " + String(httpCode)); // print HTTP error code
     }
 
-    String jsonRespStr;
-    serializeJson(jsonRespObj, jsonRespStr);
-    server.send(200, "application/json", jsonRespStr);
+    cloudHttpClient.end();
 }
+
 
 /* =========================================================
    STATE MACHINE
    ========================================================= */
 void runStateMachine() {
-    switch (systemState) {
+    switch (currentState) {
 
     /* ---------------- BOOTING ---------------- */
-    case SystemState::Booting:
-        ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES_BITS); // setup PWM
-        ledcAttachPin(MOSFET_PELTIER_PIN, PWM_CHANNEL); // attach PWM to pin
-        stopCooling(); // ensure TEC is off
+    case SystemState::Booting: // - Paschal
+        // --- Configure GPIO modes ---
+        pinMode(ON_OFF_LED_PIN, OUTPUT);
+        pinMode(COOLING_ON_LED_PIN, OUTPUT);
+        pinMode(STEADY_STATE_LED_PIN, OUTPUT);
+        pinMode(MOSFET_MOTOR_PIN, OUTPUT);
+        pinMode(MOSFET_PELTIER_PIN, OUTPUT);
+
+        digitalWrite(ON_OFF_LED_PIN, HIGH);
+        digitalWrite(COOLING_ON_LED_PIN, LOW);
+        digitalWrite(STEADY_STATE_LED_PIN, LOW);
+        digitalWrite(MOSFET_MOTOR_PIN, LOW);
+        digitalWrite(MOSFET_PELTIER_PIN, LOW);
+
+        // --- Motor PWM setup ---
+        ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES_BITS);
+        ledcAttachPin(MOSFET_MOTOR_PIN, PWM_CHANNEL);
+
+        // --- Ensure everything OFF ---
+        peltiersOff();
+        motorOff();
 
         tempSensor.begin(); // initialize temperature sensor
 
         thermalState.currentTempC = 0.0f; // initialize current temp
         thermalState.targetTempC = 5.0f; // default target temp (fridge)
 
+        scanOnce(); // scan for wifi networks
         connectToWifi(); // connect to wifi
 
-        systemState = SystemState::StartingServer; // move to next state
+        setSystemState(SystemState::Idle); // set system state to Idle
         break;
 
-    /* ---------------- STARTING SERVER ---------------- */
-    case SystemState::StartingServer:
-        if (wifiConnected()) {
-            server.on("/api/command", HTTP_POST, apiCommandHandler); // register /api/command endpoint and handler
-            server.on("/api/status", HTTP_GET, apiStatusHandler); // register /api/status endpoint and handler
-            server.on("/api/history", HTTP_GET, apiHistoryHandler); // register /api/history endpoint and handler
-            server.begin(); // start HTTP server
-            systemState = SystemState::ReadyForClientReq; // move to next state
-        }
+    /* ---------------- IDLE ---------------- */
+    case SystemState::Idle:
+        peltiersOff();
+        motorOff();
         break;
-
-    /* ---------------- READY FOR CLIENT REQUEST ---------------- */
-    case SystemState::ReadyForClientReq:
-        server.handleClient(); // handle client HTTP requests
-        break;
-
-    /* ---------------- SERVING /api/command ---------------- */
-    case SystemState::ServingApiCommand: {
-        if (!jsonReqObj["cmd"].is<const char*>()) { // if cmd is missing, return error and go back to ready state
-            server.send(400, "application/json", "{\"error\":\"missing cmd\"}");
-            systemState = SystemState::ReadyForClientReq;
-            break;
-        }
-
-        String cmd = jsonReqObj["cmd"];
-        if (cmd == "SET_TARGET_TEMP") {
-            if (jsonReqObj["value"].is<float>()) { // if value is missing, use default
-                thermalState.targetTempC = jsonReqObj["value"];
-            }
-
-            coolingStartTimeMs = millis();
-            coolingStartTempC = thermalState.currentTempC;
-            lastCommand = "Cooling unit to " + String(thermalState.targetTempC) + "°C";
-
-            startCooling();
-            systemState = SystemState::Cooling; // move to cooling state
-            server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
-        }
-        else if (cmd == "STOP_COOLING") {
-            stopCooling(); // stop cooling
-            lastCommand = "Cooling stopped";
-            systemState = SystemState::ReadyForClientReq; // move to ready state
-            server.send(200, "application/json", "{\"ok\":true}"); // return 200 OK
-        }
-        
-        else {
-            server.send(400, "application/json", "{\"error\":\"unknown cmd\"}"); // return 400 Bad Request
-            systemState = SystemState::ReadyForClientReq; // move to ready state
-        }
-        break;
-    }
-
-    /* ---------------- SERVING /api/status ---------------- */
-    case SystemState::ServingApiStatus: {
-        JsonDocument jsonRespObj; // create JSON object
-        jsonRespObj["currentTemp"] = thermalState.currentTempC; // add current temp
-        jsonRespObj["targetTemp"] = thermalState.targetTempC; // add target temp
-        jsonRespObj["state"] = (systemState == SystemState::Cooling) ? "cooling" : "idle"; // NEW
-        jsonRespObj["lastUpdated"] = (millis() - lastTempTimeMs) / 1000; // add time since last temp read in seconds
-        jsonRespObj["lastCommand"] = lastCommand; // add last command
-
-        if (systemState == SystemState::Cooling) {
-            jsonRespObj["coolingTimeSec"] = (millis() - coolingStartTimeMs) / 1000; // NEW
-            jsonRespObj["rangeStart"] = coolingStartTempC; // NEW
-        }
-
-        String jsonRespStr;
-        serializeJson(jsonRespObj, jsonRespStr); // serialize JSON object to JSON string
-        server.send(200, "application/json", jsonRespStr); // send response as JSON string
-
-        systemState = SystemState::ReadyForClientReq; // move to ready state
-        break;
-    }
 
     /* ---------------- COOLING ---------------- */
     case SystemState::Cooling:
-        server.handleClient(); // handle client HTTP requests during cooling
-        readTemperature(); // update current temperature
+        readTemperature(); // read temperature
 
-        if (thermalState.currentTempC <= thermalState.targetTempC) { // stop cooling if target temp is reached
-            stopCooling();
-            systemState = SystemState::ReadyForClientReq;
+        if (thermalState.currentTempC > thermalState.targetTempC) { // if current temp is greater than target
+            peltiersOn();
+            setMotorSpeed(225);   // adjust speed as needed
+            Serial.println("Cooling... Current Temp: " + String(thermalState.currentTempC) + " °C, Target Temp: " + String(thermalState.targetTempC) + " °C");
+        } else { // if current temp is less than or equal to target
+            peltiersOff();
+            motorOff();
+            digitalWrite(STEADY_STATE_LED_PIN, HIGH); // turn on steady state LED
+            Serial.println("Target temperature reached. Current Temp: " + String(thermalState.currentTempC) + " °C");
+            setSystemState(SystemState::Idle); // set system state to Idle
         }
         break;
 
     /* ---------------- ERROR ---------------- */
     case SystemState::Error:
-        stopCooling();
+        peltiersOff();
+        motorOff();
         break;
     }
 }
@@ -238,19 +338,24 @@ void runStateMachine() {
    ========================================================= */
 void setup() { // called once at startup
     Serial.begin(115200); // initialize serial interface for debugging
-    systemState = SystemState::Booting; // start in BOOT state
+    currentState = SystemState::Booting; // set initial system state to Booting
+    Serial.println("System Booting...");
 }
 
-unsigned long lastTempTimeMs = 0;
-void loop() { // called repeatedly after setup
-    unsigned long now = millis();
-    if (now - lastTempTimeMs >= 1000) { // update temperature every second
-        lastTempTimeMs = now;
-        readTemperature();
+void loop() { // called repeatedly
+    displayTemperature(thermalState);
+    unsigned long now = millis(); // get current time in milliseconds
 
-        tempHistory[tempHistIndex] = { millis(), thermalState.currentTempC }; // NEW
-        tempHistIndex = (tempHistIndex + 1) % 600; // NEW
+    if (now - lastTelemMs >= 30000) { // send telemetry every 30 seconds
+        lastTelemMs = now;       // update last telemetry timestamp
+        readTemperature();       // get latest temperature
+        sendTelemetryToCloud();  // send telemetry to cloud
     }
 
-    runStateMachine(); // run state machine
+    if (now - lastCmdPollMs >= 2000) { // Poll cloud for commands from cloud every 2 seconds
+        lastCmdPollMs = now; // update last command poll timestamp
+        pollCloudForCommand(); // poll cloud for command
+    }
+
+    runStateMachine(); // Run state machine
 }

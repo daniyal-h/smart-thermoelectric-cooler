@@ -14,7 +14,7 @@ import CoolingInsights from "../components/CoolingInsights";
 
 const { width, height } = Dimensions.get("window");
 const hPadding = 16;
-const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
+const updateSpeed = 10000; // every 10s
 
 const TrendsScreen = () => {
   const { target } = useTarget();
@@ -34,6 +34,7 @@ const TrendsScreen = () => {
           console.log("Telemetry history was empty!");
           setTemperatures(null);
           setStartTime(null);
+          setStates(null);
           return;
         }
 
@@ -41,7 +42,8 @@ const TrendsScreen = () => {
         const [ts, temps] = getTelemetries(data); // destructure tuple
         setTemperatures(temps);
         setTimestamps(ts);
-        setStartTime(getStartingTime(ts[0])); // start at oldest
+
+        setStartTime(getStartingTime(ts[0]));
       };
 
       // fetch on focus then periodically

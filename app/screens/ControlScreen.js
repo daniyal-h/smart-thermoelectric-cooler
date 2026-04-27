@@ -22,13 +22,14 @@ import SliderControl from "../components/SliderControl";
 import { useTarget } from "../context/TargetContext";
 
 const { width, height } = Dimensions.get("window");
-const onThreshold = 90;
-const updateSpeed = 35000; // in s; 5s slower than ESP32 update speed
+const onThreshold = 90; // 1 minute max
+const updateSpeed = 10000; // every 10s
 
 const ControlScreen = () => {
-  const {target, setTarget} = useTarget(); // target shared across screens
+  const { target, setTarget } = useTarget(); // target shared across screens
 
-  const [isOn, setIsOn] = useState(false); // default to off
+  const [isCooling, setIsCooling] = useState(false); // backend truth
+  const [isDesiredOn, setIsDesiredOn] = useState(false); // default to off
   const [systemTarget, setSystemTarget] = useState(null);
   const [liveReading, setLiveReading] = useState(null);
   const [lastUpdateTime, setLastUpdateTime] = useState("");
@@ -63,7 +64,7 @@ const ControlScreen = () => {
 
         // infer system state if latest update was less than the threshold
         const timeSince = getTimeSince(timestamp);
-        setIsOn(timeSince <= onThreshold && state === "Cooling");
+        setIsCooling(timeSince <= onThreshold && state === "Cooling");
 
         setLastUpdateTime(getTimeSinceString(timestamp));
       };
@@ -77,17 +78,32 @@ const ControlScreen = () => {
         clearInterval(intervalId);
         isActive = false;
       };
-    }, [initialized])
+    }, [initialized]),
   );
 
   // send command ONLY when user changes target
   useEffect(() => {
-    if (!isOn) return;
+    if (!isDesiredOn) return;
     if (!initialized) return;
     if (target === systemTarget) return;
 
-    sendCommand(target);
-  }, [target, systemTarget, initialized]);
+    sendCommand(target, true);
+  }, [target, systemTarget, initialized, isDesiredOn]);
+
+  // for toggling cooling
+  const onTogglePower = () => {
+    const next = !isDesiredOn;
+    setIsDesiredOn(next);
+    sendCommand(systemTarget, next);
+  };
+
+  let uiCoolingState;
+
+  if (isDesiredOn) {
+    uiCoolingState = isCooling ? "Cooling unit to " : "Starting to cool to ";
+  } else {
+    uiCoolingState = isCooling ? "Stopping unit..." : "Unit is off...";
+  }
 
   return (
     <SafeAreaView
@@ -95,7 +111,7 @@ const ControlScreen = () => {
         styles.container,
         {
           // toggle background colour by system status
-          backgroundColor: isOn
+          backgroundColor: isDesiredOn
             ? colours.backgroundPrimary
             : colours.backgroundOff,
         },
@@ -117,7 +133,7 @@ const ControlScreen = () => {
           </View>
         ) : (
           <Text style={[{ textAlign: "center" }, typography.smallDisplay]}>
-            Error connecting to Database
+            No data found
           </Text>
         )}
       </View>
@@ -129,7 +145,8 @@ const ControlScreen = () => {
         </View>
 
         <SliderControl
-          isOn={isOn}
+          isDesiredOn={isDesiredOn}
+          isCooling={isCooling}
           temp={target}
           liveReading={liveReading}
           setTemp={setTarget}
@@ -150,17 +167,17 @@ const ControlScreen = () => {
                 styles.powerButtonContainer,
                 styles.shadowOutline,
                 {
-                  borderColor: isOn
+                  borderColor: isDesiredOn
                     ? colours.buttonPrimary
                     : colours.buttonDisabled,
                 },
                 pressed && { opacity: 0.7 },
               ]}
-              onPress={() => setIsOn((prev) => !prev)} // toggle
+              onPress={onTogglePower} // toggle
             >
               {/* Make the power button toggle in text and colour */}
               <View style={styles.powerButton}>
-                {!isOn ? (
+                {!isDesiredOn ? (
                   <>
                     {icons.power()}
                     <Text style={typography.boldBody}>Start Cooling</Text>
@@ -178,16 +195,16 @@ const ControlScreen = () => {
               style={[
                 styles.commandWindow,
                 styles.shadowOutline,
-                !isOn && { opacity: 0.6 },
+                !isDesiredOn && { opacity: 0.6 },
               ]}
             >
               <Text style={typography.boldBody}>Command Window</Text>
-              {isOn ? (
+              {isDesiredOn ? (
                 <Text style={typography.body}>
-                  Cooling unit to {target.toFixed(1)}°C...
+                  {uiCoolingState}{target.toFixed(1)}°C...
                 </Text>
               ) : (
-                <Text style={typography.boldBody}>System is off...</Text>
+                <Text style={typography.boldBody}>{uiCoolingState}</Text>
               )}
             </View>
           </View>
@@ -223,7 +240,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: RFValue(-100),
-    marginTop: RFValue(80),
     marginTop: Platform.OS === "ios" ? RFValue(60) : RFValue(82),
   },
   readingText: {
